@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OSINT Intelligence Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+/* ── Reset & Base ─────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0a0a0b;
+  --bg2:       #111114;
+  --bg3:       #18181d;
+  --border:    #242428;
+  --border2:   #2e2e35;
+  --text:      #e8e8ec;
+  --muted:     #6b6b78;
+  --muted2:    #4a4a55;
+  --accent:    #e63b3b;
+  --accent2:   #ff6b6b;
+  --green:     #3bca7a;
+  --yellow:    #f0b429;
+  --blue:      #4d9de0;
+  --mono:      'Space Mono', monospace;
+  --sans:      'DM Sans', sans-serif;
+  --radius:    6px;
+  --radius2:   10px;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── Scanline overlay ────────────────────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.03) 2px,
+    rgba(0,0,0,0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── Layout ──────────────────────────────────────────────────────────── */
+.shell {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 20px 60px;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────── */
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 28px 0 20px;
+  margin-bottom: 28px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+.logo-mark {
+  width: 38px; height: 38px;
+  border: 1.5px solid var(--accent);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  animation: pulse-ring 3s ease-in-out infinite;
+}
+@keyframes pulse-ring {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(230,59,59,0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(230,59,59,0); }
+}
+.logo-mark svg { width: 18px; height: 18px; stroke: var(--accent); fill: none; }
+.header-text h1 {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: var(--text);
+  text-transform: uppercase;
+}
+.header-text p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 3px;
+  font-family: var(--mono);
+}
+.header-badge {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .1em;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 3px 10px;
+  border-radius: 2px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+/* ── Panel / Card ────────────────────────────────────────────────────── */
+.panel {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius2);
+  padding: 18px;
+  margin-bottom: 14px;
+}
+.panel-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.panel-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── Provider selector ───────────────────────────────────────────────── */
+.provider-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.prov {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 10px 8px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  text-align: left;
+}
+.prov:hover { border-color: var(--border2); }
+.prov.active {
+  border-color: var(--accent);
+  background: rgba(230,59,59,.06);
+}
+.prov-name {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  display: block;
+}
+.prov-model {
+  font-size: 11px;
+  color: var(--muted);
+  display: block;
+  margin-top: 2px;
+}
+.prov-free {
+  display: inline-block;
+  font-size: 9px;
+  font-family: var(--mono);
+  letter-spacing: .06em;
+  background: rgba(59,202,122,.12);
+  color: var(--green);
+  border-radius: 2px;
+  padding: 1px 5px;
+  margin-top: 5px;
+}
+.prov-paid {
+  display: inline-block;
+  font-size: 9px;
+  font-family: var(--mono);
+  letter-spacing: .06em;
+  background: rgba(240,180,41,.1);
+  color: var(--yellow);
+  border-radius: 2px;
+  padding: 1px 5px;
+  margin-top: 5px;
+}
+
+/* ── Search row ──────────────────────────────────────────────────────── */
+.search-wrap {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+input[type="text"], input[type="password"], select {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  padding: 10px 13px;
+  outline: none;
+  transition: border-color .15s;
+}
+input[type="text"]:focus,
+input[type="password"]:focus,
+select:focus { border-color: var(--border2); }
+input[type="text"]::placeholder,
+input[type="password"]::placeholder { color: var(--muted2); }
+.search-input { flex: 1; }
+
+/* ── Buttons ─────────────────────────────────────────────────────────── */
+.btn {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .05em;
+  padding: 10px 18px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  white-space: nowrap;
+}
+.btn:hover { border-color: var(--border2); background: var(--bg2); }
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 700;
+}
+.btn-primary:hover { background: var(--accent2); border-color: var(--accent2); }
+.btn-primary:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+/* ── Filters row ─────────────────────────────────────────────────────── */
+.row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.chip {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 4px 10px;
+  cursor: pointer;
+  color: var(--muted);
+  background: transparent;
+  transition: all .15s;
+}
+.chip:hover { color: var(--text); border-color: var(--border2); }
+.chip.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(230,59,59,.06);
+}
+select {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 6px 10px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+/* ── Status bar ──────────────────────────────────────────────────────── */
+#statusBar {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  padding: 10px 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+}
+.dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--muted2);
+  flex-shrink: 0;
+}
+.dot.red   { background: var(--accent); animation: blink 1s step-end infinite; }
+.dot.green { background: var(--green); }
+.dot.yellow{ background: var(--yellow); animation: blink .7s step-end infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ── Results ─────────────────────────────────────────────────────────── */
+#results { margin-top: 8px; }
+
+.entity-header {
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.entity-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 18px;
+}
+
+/* ── Tabs ────────────────────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 18px;
+}
+.tab {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  cursor: pointer;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color .15s;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-pane { display: none; }
+.tab-pane.visible { display: block; }
+
+/* ── Section cards ───────────────────────────────────────────────────── */
+.sec {
+  border: 1px solid var(--border);
+  border-radius: var(--radius2);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.sec-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+}
+.sec-num {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted2);
+}
+.sec-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--text);
+  flex: 1;
+}
+.conf {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .08em;
+  padding: 2px 7px;
+  border-radius: 2px;
+  text-transform: uppercase;
+}
+.conf-high   { background: rgba(59,202,122,.12); color: var(--green); }
+.conf-medium { background: rgba(240,180,41,.1);  color: var(--yellow); }
+.conf-low    { background: rgba(230,59,59,.1);   color: var(--accent); }
+
+.sec-body { background: var(--bg); }
+.bullet {
+  display: flex;
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: #ccc;
+}
+.bullet:last-child { border-bottom: none; }
+.bullet-arrow {
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 11px;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.cite {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 10px;
+  background: rgba(77,157,224,.12);
+  color: var(--blue);
+  border-radius: 2px;
+  padding: 0 5px;
+  margin-left: 4px;
+  cursor: pointer;
+  border: 1px solid rgba(77,157,224,.2);
+  text-decoration: none;
+  transition: background .12s;
+}
+.cite:hover { background: rgba(77,157,224,.22); }
+
+/* ── Warning box ─────────────────────────────────────────────────────── */
+.warn-box {
+  background: rgba(240,180,41,.06);
+  border: 1px solid rgba(240,180,41,.2);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  margin-bottom: 12px;
+}
+.warn-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--yellow);
+  letter-spacing: .06em;
+  margin-bottom: 8px;
+}
+.warn-item {
+  font-size: 13px;
+  color: #c8a840;
+  padding: 3px 0 3px 14px;
+  position: relative;
+}
+.warn-item::before { content: '⚠'; position: absolute; left: 0; font-size: 10px; top: 5px; }
+
+/* ── Persons ─────────────────────────────────────────────────────────── */
+.persons-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.person-tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  border: 1px solid var(--border2);
+  border-radius: 2px;
+  padding: 3px 10px;
+  color: var(--muted);
+}
+
+/* ── Sources ─────────────────────────────────────────────────────────── */
+.source-row {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  align-items: flex-start;
+}
+.source-row:last-child { border-bottom: none; }
+.src-idx {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted2);
+  min-width: 28px;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+.src-info { flex: 1; min-width: 0; }
+.src-title-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.src-url {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--blue);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  margin-top: 2px;
+}
+.src-url:hover { text-decoration: underline; }
+.src-type-badge {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .06em;
+  color: var(--muted2);
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+
+/* ── Headlines grid ──────────────────────────────────────────────────── */
+.hl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.hl-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+.hl-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted2);
+  margin-bottom: 5px;
+}
+.hl-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.45;
+}
+.kw-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.kw {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .04em;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 3px 9px;
+  color: var(--muted);
+}
+
+/* ── Quotes ──────────────────────────────────────────────────────────── */
+.quote-card {
+  border-left: 2px solid var(--blue);
+  background: var(--bg2);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 10px 16px;
+  margin-bottom: 10px;
+}
+.quote-text {
+  font-size: 14px;
+  font-style: italic;
+  color: var(--text);
+  line-height: 1.6;
+  margin-bottom: 6px;
+}
+.quote-meta { font-size: 12px; color: var(--muted); display: flex; gap: 10px; align-items: center; }
+.q-direct { font-family: var(--mono); font-size: 9px; letter-spacing:.05em; background: rgba(59,202,122,.12); color: var(--green); border-radius: 2px; padding: 2px 6px; }
+.q-para   { font-family: var(--mono); font-size: 9px; letter-spacing:.05em; background: rgba(240,180,41,.1);  color: var(--yellow); border-radius: 2px; padding: 2px 6px; }
+
+/* ── Top action bar ──────────────────────────────────────────────────── */
+.result-topbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.copy-btn {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .06em;
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  color: var(--muted);
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all .12s;
+}
+.copy-btn:hover { border-color: var(--text); color: var(--text); }
+
+/* ── Error box ───────────────────────────────────────────────────────── */
+.error-box {
+  background: rgba(230,59,59,.08);
+  border: 1px solid rgba(230,59,59,.25);
+  border-radius: var(--radius);
+  padding: 16px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--accent2);
+  line-height: 1.7;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ── Header ──────────────────────────────────────────────────────────── -->
+<header>
+  <div class="logo-mark">
+    <svg viewBox="0 0 24 24" stroke-width="1.5">
+      <circle cx="12" cy="12" r="3"/>
+      <circle cx="12" cy="12" r="8"/>
+      <line x1="12" y1="2" x2="12" y2="4"/>
+      <line x1="12" y1="20" x2="12" y2="22"/>
+      <line x1="2" y1="12" x2="4" y2="12"/>
+      <line x1="20" y1="12" x2="22" y2="12"/>
+    </svg>
+  </div>
+  <div class="header-text">
+    <h1>OSINT Intelligence Engine</h1>
+    <p>Investigative Analysis · Follow the Money · Expose the Network</p>
+  </div>
+  <div class="header-badge">Private</div>
+</header>
+
+<!-- ── Provider selector ───────────────────────────────────────────────── -->
+<div class="panel">
+  <div class="panel-label">AI Provider</div>
+  <div class="provider-grid">
+    <div class="prov active" data-p="groq" onclick="selectProvider(this)">
+      <span class="prov-name">GROQ</span>
+      <span class="prov-model">Llama 3.3 70B</span>
+      <span class="prov-free">FREE</span>
+    </div>
+    <div class="prov" data-p="gemini" onclick="selectProvider(this)">
+      <span class="prov-name">GEMINI</span>
+      <span class="prov-model">2.0 Flash</span>
+      <span class="prov-free">FREE</span>
+    </div>
+    <div class="prov" data-p="claude" onclick="selectProvider(this)">
+      <span class="prov-name">CLAUDE</span>
+      <span class="prov-model">Sonnet 4 + Web</span>
+      <span class="prov-paid">PAID</span>
+    </div>
+    <div class="prov" data-p="openai" onclick="selectProvider(this)">
+      <span class="prov-name">OPENAI</span>
+      <span class="prov-model">GPT-4o</span>
+      <span class="prov-paid">PAID</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── Search ───────────────────────────────────────────────────────────── -->
+<div class="panel">
+  <div class="panel-label">Target Entity</div>
+  <div class="search-wrap">
+    <input type="text" id="targetInput" class="search-input"
+           placeholder="Company name, person, NGO, scheme, brand..." />
+    <button class="btn btn-primary" id="runBtn" onclick="runOsint()">
+      INVESTIGATE ↗
+    </button>
+  </div>
+
+  <!-- Angle chips -->
+  <div class="row" style="margin-bottom:10px">
+    <span style="font-family:var(--mono);font-size:10px;color:var(--muted2);letter-spacing:.06em;text-transform:uppercase">Angle:</span>
+    <button class="chip active" data-angle="all"             onclick="setChip(this,'angle')">All</button>
+    <button class="chip"        data-angle="funding"         onclick="setChip(this,'angle')">Funding</button>
+    <button class="chip"        data-angle="network"         onclick="setChip(this,'angle')">Network</button>
+    <button class="chip"        data-angle="contradictions"  onclick="setChip(this,'angle')">Contradictions</button>
+    <button class="chip"        data-angle="legal"           onclick="setChip(this,'angle')">Legal</button>
+    <button class="chip"        data-angle="timeline"        onclick="setChip(this,'angle')">Timeline</button>
+  </div>
+
+  <!-- Depth + Mode -->
+  <div class="row">
+    <span style="font-family:var(--mono);font-size:10px;color:var(--muted2);letter-spacing:.06em;text-transform:uppercase">Depth:</span>
+    <select id="depthSel">
+      <option value="standard">Standard</option>
+      <option value="deep">Deep Dive</option>
+      <option value="financial">Financial Focus</option>
+      <option value="network">Network Map</option>
+    </select>
+    <span style="font-family:var(--mono);font-size:10px;color:var(--muted2);letter-spacing:.06em;text-transform:uppercase;margin-left:8px">Mode:</span>
+    <select id="modeSel">
+      <option value="briefing">Briefing</option>
+      <option value="article">Article</option>
+      <option value="thread">Thread</option>
+      <option value="newsletter">Newsletter</option>
+    </select>
+    <label style="display:flex;align-items:center;gap:6px;margin-left:8px;cursor:pointer">
+      <input type="checkbox" id="quotesChk" />
+      <span style="font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.06em">QUOTES</span>
+    </label>
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+      <input type="checkbox" id="seoChk" />
+      <span style="font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.06em">SEO</span>
+    </label>
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+      <input type="checkbox" id="legalChk" />
+      <span style="font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.06em">LEGAL</span>
+    </label>
+  </div>
+</div>
+
+<!-- ── Status ────────────────────────────────────────────────────────────── -->
+<div id="statusBar">
+  <div class="dot"></div>
+  <span>Ready — select provider and enter target entity</span>
+</div>
+
+<!-- ── Results ───────────────────────────────────────────────────────────── -->
+<div id="results"></div>
+
+</div><!-- /shell -->
+
+<script>
+// ── Keys injected by GitHub Actions at build time ──────────────────────────
+const KEYS = {
+  groq:    '__GROQ_API_KEY__',
+  gemini:  '__GEMINI_API_KEY__',
+  claude:  '__ANTHROPIC_API_KEY__',
+  openai:  '__OPENAI_API_KEY__',
+};
+
+// ── State ──────────────────────────────────────────────────────────────────
+let currentProvider = 'groq';
+let currentAngle    = 'all';
+let briefingData    = null;
+
+// ── Provider select ────────────────────────────────────────────────────────
+function selectProvider(el) {
+  document.querySelectorAll('.prov').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  currentProvider = el.dataset.p;
+}
+
+// ── Chip toggle (angle) ────────────────────────────────────────────────────
+function setChip(el, group) {
+  el.closest('.row').querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  if (group === 'angle') currentAngle = el.dataset.angle;
+}
+
+// ── Status helper ──────────────────────────────────────────────────────────
+function setStatus(msg, state='idle') {
+  const bar = document.getElementById('statusBar');
+  const colors = { idle:'', loading:'yellow', ok:'green', err:'red' };
+  bar.innerHTML = `<div class="dot ${colors[state]}"></div><span>${msg}</span>`;
+}
+
+// ── System prompt ──────────────────────────────────────────────────────────
+function buildSystem(target, angle, depth) {
+  const angleInstr = angle !== 'all'
+    ? `FOCUS ANGLE: Prioritise findings related to "${angle}".` : '';
+  const depthMap = {
+    standard:  'Standard investigative briefing.',
+    deep:      'Deep dive — include historical records, archived pages, secondary sources.',
+    financial: 'Focus on financial records, funding, investors, revenue, controversies.',
+    network:   'Focus on people network — founders, directors, advisors, political connections.',
+  };
+  return `You are an elite investigative journalist and OSINT expert with internet search capability.
+Research "${target}" thoroughly and produce a structured intelligence briefing.
+${angleInstr}
+${depthMap[depth] || depthMap.standard}
+
+SEARCH STRATEGY:
+1. Entity background, founding, official presence
+2. News, investigative reports, controversies
+3. Financial records, funding, ownership structure
+4. Legal cases, regulatory filings
+5. Key people, political connections, institutional ties
+6. Public statements, contradictions, deleted content
+
+OUTPUT: Return ONLY a valid JSON object — no markdown, no preamble:
+{
+  "context": ["bullet ending with [Source N]", ...],
+  "network": ["bullet ending with [Source N]", ...],
+  "trail":   ["bullet ending with [Source N]", ...],
+  "guns":    ["bullet ending with [Source N]", ...],
+  "quotes":  [{"speaker":"","quote":"","date":"","source_url":"","is_direct":true}],
+  "confidence": {"context":"high|medium|low","network":"high|medium|low","trail":"high|medium|low","guns":"high|medium|low"},
+  "needs_corroboration": ["claim needing verification"],
+  "named_persons": ["Full Name"],
+  "keywords": ["keyword"],
+  "headline_variants": {"seo":"","clickable":"","print":"","thread_hook":""},
+  "sources": [{"index":0,"title":"","url":"","domain":"","type":"news|official|report|social|legal|other","snippet":""}]
+}
+
+RULES:
+- Every bullet MUST end with [Source N] matching sources array
+- Only verified facts — no hallucination
+- Absent data: "NO DIRECT DATA FOUND IN CURRENT SOURCES"
+- Include 6-15 diverse sources with real URLs`;
+}
+
+// ── API callers ────────────────────────────────────────────────────────────
+async function callGroq(target, system) {
+  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${KEYS.groq}`,
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      max_tokens: 6000,
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: `Investigate: "${target}". Produce full briefing JSON with real source URLs.` },
+      ],
+    }),
+  });
+  if (!r.ok) { const e = await r.json(); throw new Error(e.error?.message || `Groq ${r.status}`); }
+  const d = await r.json();
+  return d.choices[0].message.content;
+}
+
+async function callGemini(target, system) {
+  const r = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${KEYS.gemini}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: system }] },
+        contents: [{ role: 'user', parts: [{ text: `Investigate: "${target}". Produce full briefing JSON.` }] }],
+        generationConfig: { maxOutputTokens: 6000, temperature: 0.3 },
+      }),
+    }
+  );
+  if (!r.ok) { const e = await r.json(); throw new Error(e.error?.message || `Gemini ${r.status}`); }
+  const d = await r.json();
+  return d.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
+async function callClaude(target, system) {
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': KEYS.claude,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 8000,
+      system,
+      messages: [{ role: 'user', content: `Investigate: "${target}". Search internet and produce full briefing JSON.` }],
+      tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+    }),
+  });
+  if (!r.ok) { const e = await r.json(); throw new Error(e.error?.message || `Claude ${r.status}`); }
+  const d = await r.json();
+  return d.content.map(b => b.type === 'text' ? b.text : '').filter(Boolean).join('\n');
+}
+
+async function callOpenAI(target, system) {
+  const r = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${KEYS.openai}`,
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      max_tokens: 6000,
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: `Investigate: "${target}". Produce full briefing JSON with real source URLs.` },
+      ],
+    }),
+  });
+  if (!r.ok) { const e = await r.json(); throw new Error(e.error?.message || `OpenAI ${r.status}`); }
+  const d = await r.json();
+  return d.choices[0].message.content;
+}
+
+// ── Parse JSON ─────────────────────────────────────────────────────────────
+function parseJSON(raw) {
+  const clean = raw.replace(/```json|```/g, '').trim();
+  try { return JSON.parse(clean); } catch(_) {}
+  const m = clean.match(/\{[\s\S]*\}/);
+  if (m) return JSON.parse(m[0]);
+  throw new Error('JSON parse failed. Raw: ' + clean.slice(0, 300));
+}
+
+// ── Main run ───────────────────────────────────────────────────────────────
+async function runOsint() {
+  const target = document.getElementById('targetInput').value.trim();
+  if (!target) { setStatus('Enter an entity name first', 'err'); return; }
+
+  const key = KEYS[currentProvider];
+  if (!key || key.startsWith('__')) {
+    setStatus(`No API key configured for ${currentProvider.toUpperCase()} — check GitHub Secrets`, 'err');
+    return;
+  }
+
+  const depth  = document.getElementById('depthSel').value;
+  const system = buildSystem(target, currentAngle, depth);
+
+  document.getElementById('results').innerHTML = '';
+  document.getElementById('runBtn').disabled = true;
+  setStatus(`Searching with ${currentProvider.toUpperCase()}...`, 'loading');
+
+  try {
+    let raw;
+    if      (currentProvider === 'groq')   raw = await callGroq(target, system);
+    else if (currentProvider === 'gemini') raw = await callGemini(target, system);
+    else if (currentProvider === 'claude') raw = await callClaude(target, system);
+    else if (currentProvider === 'openai') raw = await callOpenAI(target, system);
+
+    setStatus('Parsing briefing...', 'loading');
+    briefingData = parseJSON(raw);
+
+    const srcCount = (briefingData.sources || []).length;
+    setStatus(`Done — ${srcCount} sources found via ${currentProvider.toUpperCase()}`, 'ok');
+    renderBriefing(target, briefingData);
+
+  } catch(e) {
+    setStatus('Error: ' + e.message, 'err');
+    document.getElementById('results').innerHTML =
+      `<div class="error-box">ERROR: ${e.message}</div>`;
+  } finally {
+    document.getElementById('runBtn').disabled = false;
+  }
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────
+function renderBriefing(target, b) {
+  const sources = b.sources || [];
+  const srcMap  = Object.fromEntries(sources.map(s => [s.index, s]));
+  const conf    = b.confidence || {};
+
+  function linkBullets(arr) {
+    if (!arr?.length) return `<div class="bullet"><span class="bullet-arrow">▸</span><span>No data found.</span></div>`;
+    return arr.map(item => {
+      const linked = item.replace(/\[Source (\d+)\]/g, (_, n) => {
+        const s = srcMap[+n];
+        const url   = s?.url   || '#';
+        const title = s?.title || s?.domain || `Source ${n}`;
+        return `<a class="cite" href="${url}" target="_blank" title="${title}">[${n}]</a>`;
+      });
+      return `<div class="bullet"><span class="bullet-arrow">▸</span><span>${linked}</span></div>`;
+    }).join('');
+  }
+
+  const sections = [
+    { num:'01', key:'context', title:'Context & Covert Identity' },
+    { num:'02', key:'network', title:'Human Network (Kundali)' },
+    { num:'03', key:'trail',   title:'Paper Trail & Money Trail' },
+    { num:'04', key:'guns',    title:'Smoking Guns & Contradictions' },
+  ];
+
+  // Tabs to show
+  const showQuotes = document.getElementById('quotesChk').checked;
+  const showSEO    = document.getElementById('seoChk').checked;
+  const showLegal  = document.getElementById('legalChk').checked;
+
+  let tabs = `
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('briefing',this)">Briefing</div>
+      ${showQuotes ? `<div class="tab" onclick="switchTab('quotes',this)">Quotes (${b.quotes?.length||0})</div>` : ''}
+      ${showSEO    ? `<div class="tab" onclick="switchTab('seo',this)">Headlines & SEO</div>` : ''}
+      <div class="tab" onclick="switchTab('sources',this)">Sources (${sources.length})</div>
+    </div>`;
+
+  // ── Briefing tab ──
+  let briefingPane = `<div id="tab-briefing" class="tab-pane visible">`;
+  sections.forEach(s => {
+    const c = conf[s.key] || 'medium';
+    briefingPane += `
+      <div class="sec">
+        <div class="sec-head">
+          <span class="sec-num">${s.num}</span>
+          <span class="sec-title">${s.title}</span>
+          <span class="conf conf-${c}">${c.toUpperCase()}</span>
+        </div>
+        <div class="sec-body">${linkBullets(b[s.key])}</div>
+      </div>`;
+  });
+
+  if (b.needs_corroboration?.length) {
+    briefingPane += `<div class="warn-box"><div class="warn-title">⚠ NEEDS CORROBORATION BEFORE PUBLISHING</div>`;
+    b.needs_corroboration.forEach(n => briefingPane += `<div class="warn-item">${n}</div>`);
+    briefingPane += `</div>`;
+  }
+  if (b.named_persons?.length) {
+    briefingPane += `<div class="panel" style="margin-top:0">
+      <div class="panel-label">Right-of-Reply Checklist</div>
+      <div class="persons-wrap">`;
+    b.named_persons.forEach(p => briefingPane += `<span class="person-tag">☐ ${p}</span>`);
+    briefingPane += `</div></div>`;
+  }
+  briefingPane += `</div>`;
+
+  // ── Quotes tab ──
+  let quotesPane = `<div id="tab-quotes" class="tab-pane">`;
+  if (b.quotes?.length) {
+    b.quotes.forEach(q => {
+      quotesPane += `
+        <div class="quote-card">
+          <div class="quote-text">"${q.quote}"</div>
+          <div class="quote-meta">
+            <span class="${q.is_direct ? 'q-direct' : 'q-para'}">${q.is_direct ? 'DIRECT' : 'PARAPHRASE'}</span>
+            <strong>${q.speaker||'Unknown'}</strong>
+            ${q.date ? `· ${q.date}` : ''}
+            ${q.source_url ? `· <span class="src-url" onclick="window.open('${q.source_url}','_blank')">${q.source_url.slice(0,50)}…</span>` : ''}
+          </div>
+        </div>`;
+    });
+  } else { quotesPane += `<p style="color:var(--muted);font-size:13px;padding:8px 0">No quotes extracted.</p>`; }
+  quotesPane += `</div>`;
+
+  // ── SEO tab ──
+  let seoPane = `<div id="tab-seo" class="tab-pane">`;
+  if (b.headline_variants) {
+    const hv = b.headline_variants;
+    seoPane += `<div class="hl-grid" style="margin-bottom:14px">`;
+    [['seo','SEO Headline'],['clickable','Clickable / Social'],['print','Print Headline'],['thread_hook','Thread Hook']].forEach(([k,l]) => {
+      if (hv[k]) seoPane += `<div class="hl-card"><div class="hl-label">${l}</div><div class="hl-text">${hv[k]}</div></div>`;
+    });
+    seoPane += `</div>`;
+  }
+  if (b.keywords?.length) {
+    seoPane += `<div class="kw-wrap">`;
+    b.keywords.forEach(kw => seoPane += `<span class="kw">${kw}</span>`);
+    seoPane += `</div>`;
+  }
+  seoPane += `</div>`;
+
+  // ── Sources tab ──
+  let sourcesPane = `<div id="tab-sources" class="tab-pane">`;
+  sources.forEach(s => {
+    sourcesPane += `
+      <div class="source-row">
+        <div class="src-idx">[${s.index}]</div>
+        <div class="src-info">
+          <div class="src-title-text">${s.title || s.domain}</div>
+          <span class="src-url" onclick="window.open('${s.url}','_blank')">${s.url}</span>
+          <div class="src-type-badge">${s.type||'web'} · ${s.domain}${s.snippet ? ' — ' + s.snippet.slice(0,70) + '…' : ''}</div>
+        </div>
+      </div>`;
+  });
+  sourcesPane += `</div>`;
+
+  document.getElementById('results').innerHTML = `
+    <div class="result-topbar">
+      <div>
+        <div class="entity-header">${target}</div>
+        <div class="entity-meta">${new Date().toLocaleString('en-IN')} · ${currentProvider.toUpperCase()} · ${sources.length} sources</div>
+      </div>
+      <button class="copy-btn" onclick="copyJSON()">COPY JSON</button>
+    </div>
+    ${tabs}
+    ${briefingPane}
+    ${showQuotes ? quotesPane : ''}
+    ${showSEO    ? seoPane    : ''}
+    ${sourcesPane}`;
+}
+
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('visible'));
+  el.classList.add('active');
+  const pane = document.getElementById('tab-' + name);
+  if (pane) pane.classList.add('visible');
+}
+
+function copyJSON() {
+  if (!briefingData) return;
+  navigator.clipboard.writeText(JSON.stringify(briefingData, null, 2));
+}
+
+// Enter key
+document.getElementById('targetInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') runOsint();
+});
+</script>
+</body>
+</html>
