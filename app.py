@@ -4,6 +4,7 @@ OSINT Multi-Pass Factory — Unified Production Cloud Deployment Backend
 ======================================================================
 Features:
 - Dual-Role Server Architecture (API Backend Hub + Static Frontend Servings)
+- Robust API Response Object/Dictionary Safety Layer
 - Production Dynamic Port Routing for Cloud Container Mapping
 """
 
@@ -132,7 +133,28 @@ async def run_deep_journalism_pipeline(job_id: str, target: str, angle: str):
         if response.status_code != 200:
             raise RuntimeError(f"AI cloud pipeline processing boundary crash: {response.text}")
 
-        output_json = json.loads(response.json()["choices"][0].message.content)
+        # ── CRITICAL FIX: Robust Safe Parsing Engine ────────────────────────
+        res_data = response.json()
+        
+        if "choices" not in res_data or not res_data["choices"]:
+            raise RuntimeError(f"Unexpected Groq API payload schema: {res_data}")
+            
+        choice = res_data["choices"][0]
+        
+        # Guardrail checking if choice/message behaves as an object or a standard dictionary
+        if hasattr(choice, "message"):
+            msg_node = choice.message
+            raw_content = msg_node.content if hasattr(msg_node, "content") else msg_node.get("content", "")
+        else:
+            msg_node = choice.get("message", {})
+            raw_content = msg_node.get("content", "") if isinstance(msg_node, dict) else getattr(msg_node, "content", "")
+
+        if not raw_content:
+            raise RuntimeError("The model generated an completely empty content frame response.")
+            
+        output_json = json.loads(raw_content)
+        # ────────────────────────────────────────────────────────────────────
+        
         output_json["sources"] = source_audit_matrix
 
         # State Transition Execution
@@ -146,7 +168,7 @@ async def run_deep_journalism_pipeline(job_id: str, target: str, angle: str):
         JOB_REGISTRY[job_id]["data"] = {"error": str(run_err)}
 
 # ─────────────────────────────────────────────────────────────────────────────
-# UNIFIED DUAL-ROLE ROUTING ENDPOINTS
+# HTTP REST ENDPOINT ROUTERS
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.get("/", response_class=HTMLResponse)
@@ -173,7 +195,6 @@ async def fetch_job_status(job_id: str):
 
 if __name__ == "__main__":
     import uvicorn
-    # Render binds dynamically to port environmental variables; fall back to 8000 if running locally
     target_port = int(os.environ.get("PORT", 8000))
     logger.info(f"Launching production cloud runtime engine on port: {target_port}")
     uvicorn.run(app, host="0.0.0.0", port=target_port)
