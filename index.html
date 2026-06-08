@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>OSINT Intelligence Engine</title>
+<title>OSINT Intelligence Engine Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
 <style>
-/* ── Reset & Base ─────────────────────────────────────────────────────── */
+/* ── Reset & Base Styles ──────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -30,691 +30,130 @@
   --radius2:   10px;
 }
 
-html { scroll-behavior: smooth; }
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--sans);
-  font-size: 14px;
-  line-height: 1.6;
-  min-height: 100vh;
-}
-
-/* ── Scanline overlay ────────────────────────────────────────────────── */
-body::before {
-  content: '';
-  position: fixed; inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0,0,0,0.03) 2px,
-    rgba(0,0,0,0.03) 4px
-  );
-  pointer-events: none;
-  z-index: 9999;
-}
-
-/* ── Layout ──────────────────────────────────────────────────────────── */
-.shell {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 0 20px 60px;
-}
+body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.6; min-height: 100vh; }
+body::before { content: ''; position: fixed; inset: 0; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px); pointer-events: none; z-index: 9999; }
+.shell { max-width: 900px; margin: 0 auto; padding: 0 20px 60px; }
 
 /* ── Header ──────────────────────────────────────────────────────────── */
-header {
-  border-bottom: 1px solid var(--border);
-  padding: 28px 0 20px;
-  margin-bottom: 28px;
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-}
-.logo-mark {
-  width: 38px; height: 38px;
-  border: 1.5px solid var(--accent);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  animation: pulse-ring 3s ease-in-out infinite;
-}
-@keyframes pulse-ring {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(230,59,59,0.4); }
-  50%       { box-shadow: 0 0 0 8px rgba(230,59,59,0); }
-}
+header { border-bottom: 1px solid var(--border); padding: 28px 0 20px; margin-bottom: 28px; display: flex; align-items: flex-start; gap: 16px; }
+.logo-mark { width: 38px; height: 38px; border: 1.5px solid var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; animation: pulse-ring 3s ease-in-out infinite; }
+@keyframes pulse-ring { 0%, 100% { box-shadow: 0 0 0 0 rgba(230,59,59,0.4); } 50% { box-shadow: 0 0 0 8px rgba(230,59,59,0); } }
 .logo-mark svg { width: 18px; height: 18px; stroke: var(--accent); fill: none; }
-.header-text h1 {
-  font-family: var(--mono);
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: .08em;
-  color: var(--text);
-  text-transform: uppercase;
-}
-.header-text p {
-  font-size: 12px;
-  color: var(--muted);
-  margin-top: 3px;
-  font-family: var(--mono);
-}
-.header-badge {
-  margin-left: auto;
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: .1em;
-  color: var(--accent);
-  border: 1px solid var(--accent);
-  padding: 3px 10px;
-  border-radius: 2px;
-  text-transform: uppercase;
-  flex-shrink: 0;
-}
+.header-text h1 { font-family: var(--mono); font-size: 15px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.header-text p { font-size: 12px; color: var(--muted); margin-top: 3px; font-family: var(--mono); }
+.header-badge { margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--accent); border: 1px solid var(--accent); padding: 3px 10px; border-radius: 2px; text-transform: uppercase; }
 
-/* ── Panel / Card ────────────────────────────────────────────────────── */
-.panel {
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius2);
-  padding: 18px;
-  margin-bottom: 14px;
-}
-.panel-label {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.panel-label::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-}
+/* ── Panel Components ────────────────────────────────────────────────── */
+.panel { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius2); padding: 18px; margin-bottom: 14px; }
+.panel-label { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.panel-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-/* ── Provider selector ───────────────────────────────────────────────── */
-.provider-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-}
-.prov {
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 10px 10px 8px;
-  cursor: pointer;
-  transition: border-color .15s, background .15s;
-  text-align: left;
-}
-.prov:hover { border-color: var(--border2); }
-.prov.active {
-  border-color: var(--accent);
-  background: rgba(230,59,59,.06);
-}
-.prov-name {
-  font-family: var(--mono);
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text);
-  display: block;
-}
-.prov-model {
-  font-size: 11px;
-  color: var(--muted);
-  display: block;
-  margin-top: 2px;
-}
-.prov-free {
-  display: inline-block;
-  font-size: 9px;
-  font-family: var(--mono);
-  letter-spacing: .06em;
-  background: rgba(59,202,122,.12);
-  color: var(--green);
-  border-radius: 2px;
-  padding: 1px 5px;
-  margin-top: 5px;
-}
-.prov-paid {
-  display: inline-block;
-  font-size: 9px;
-  font-family: var(--mono);
-  letter-spacing: .06em;
-  background: rgba(240,180,41,.1);
-  color: var(--yellow);
-  border-radius: 2px;
-  padding: 1px 5px;
-  margin-top: 5px;
-}
-
-/* ── Search row ──────────────────────────────────────────────────────── */
-.search-wrap {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-input[type="text"], input[type="password"], select {
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text);
-  font-family: var(--sans);
-  font-size: 14px;
-  padding: 10px 13px;
-  outline: none;
-  transition: border-color .15s;
-}
-input[type="text"]:focus,
-input[type="password"]:focus,
-select:focus { border-color: var(--border2); }
-input[type="text"]::placeholder,
-input[type="password"]::placeholder { color: var(--muted2); }
+.search-wrap { display: flex; gap: 8px; margin-bottom: 12px; }
+input[type="text"], select { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 14px; padding: 10px 13px; outline: none; }
 .search-input { flex: 1; }
 
-/* ── Buttons ─────────────────────────────────────────────────────────── */
-.btn {
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text);
-  font-family: var(--mono);
-  font-size: 12px;
-  letter-spacing: .05em;
-  padding: 10px 18px;
-  cursor: pointer;
-  transition: border-color .15s, background .15s;
-  white-space: nowrap;
-}
-.btn:hover { border-color: var(--border2); background: var(--bg2); }
-.btn-primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-  font-weight: 700;
-}
-.btn-primary:hover { background: var(--accent2); border-color: var(--accent2); }
-.btn-primary:disabled {
-  opacity: .5;
-  cursor: not-allowed;
-}
+.btn { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: var(--mono); font-size: 12px; padding: 10px 18px; cursor: pointer; white-space: nowrap; }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; }
 
-/* ── Filters row ─────────────────────────────────────────────────────── */
-.row {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-.chip {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  border: 1px solid var(--border);
-  border-radius: 2px;
-  padding: 4px 10px;
-  cursor: pointer;
-  color: var(--muted);
-  background: transparent;
-  transition: all .15s;
-}
-.chip:hover { color: var(--text); border-color: var(--border2); }
-.chip.active {
-  color: var(--accent);
-  border-color: var(--accent);
-  background: rgba(230,59,59,.06);
-}
-select {
-  font-family: var(--mono);
-  font-size: 11px;
-  padding: 6px 10px;
-  color: var(--muted);
-  cursor: pointer;
-}
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.chip { font-family: var(--mono); font-size: 10px; text-transform: uppercase; border: 1px solid var(--border); border-radius: 2px; padding: 4px 10px; cursor: pointer; color: var(--muted); background: transparent; }
+.chip.active { color: var(--accent); border-color: var(--accent); background: rgba(230,59,59,.06); }
 
-/* ── Status bar ──────────────────────────────────────────────────────── */
-#statusBar {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--muted);
-  padding: 10px 0 4px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 32px;
-}
-.dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--muted2);
-  flex-shrink: 0;
-}
+/* ── Status Bar ──────────────────────────────────────────────────────── */
+#statusBar { font-family: var(--mono); font-size: 11px; color: var(--muted); padding: 10px 0 4px; display: flex; align-items: center; gap: 8px; min-height: 32px; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted2); }
 .dot.red   { background: var(--accent); animation: blink 1s step-end infinite; }
 .dot.green { background: var(--green); }
 .dot.yellow{ background: var(--yellow); animation: blink .7s step-end infinite; }
 @keyframes blink { 50% { opacity: 0; } }
 
-/* ── Results ─────────────────────────────────────────────────────────── */
-#results { margin-top: 8px; }
-
-.entity-header {
-  font-family: var(--mono);
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text);
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  margin-bottom: 4px;
-}
-.entity-meta {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--muted);
-  margin-bottom: 18px;
-}
-
-/* ── Tabs ────────────────────────────────────────────────────────────── */
-.tabs {
-  display: flex;
-  gap: 0;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 18px;
-}
-.tab {
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  padding: 8px 16px;
-  cursor: pointer;
-  color: var(--muted);
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  transition: color .15s;
-}
-.tab:hover { color: var(--text); }
+/* ── Tabs & View Panes ───────────────────────────────────────────────── */
+.tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 18px; }
+.tab { font-family: var(--mono); font-size: 11px; text-transform: uppercase; padding: 8px 16px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 .tab-pane { display: none; }
 .tab-pane.visible { display: block; }
 
-/* ── Section cards ───────────────────────────────────────────────────── */
-.sec {
-  border: 1px solid var(--border);
-  border-radius: var(--radius2);
-  margin-bottom: 12px;
-  overflow: hidden;
-}
-.sec-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 11px 16px;
-  background: var(--bg2);
-  border-bottom: 1px solid var(--border);
-}
-.sec-num {
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--muted2);
-}
-.sec-title {
-  font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .07em;
-  text-transform: uppercase;
-  color: var(--text);
-  flex: 1;
-}
-.conf {
-  font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: .08em;
-  padding: 2px 7px;
-  border-radius: 2px;
-  text-transform: uppercase;
-}
+/* ── Briefing Cards ───────────────────────────────────────────────────── */
+.sec { border: 1px solid var(--border); border-radius: var(--radius2); margin-bottom: 12px; overflow: hidden; }
+.sec-head { display: flex; align-items: center; gap: 10px; padding: 11px 16px; background: var(--bg2); border-bottom: 1px solid var(--border); }
+.sec-num { font-family: var(--mono); font-size: 10px; color: var(--muted2); }
+.sec-title { font-family: var(--mono); font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text); flex: 1; }
+.conf { font-family: var(--mono); font-size: 9px; padding: 2px 7px; border-radius: 2px; text-transform: uppercase; }
 .conf-high   { background: rgba(59,202,122,.12); color: var(--green); }
 .conf-medium { background: rgba(240,180,41,.1);  color: var(--yellow); }
 .conf-low    { background: rgba(230,59,59,.1);   color: var(--accent); }
 
-.sec-body { background: var(--bg); }
-.bullet {
-  display: flex;
-  gap: 10px;
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--border);
-  font-size: 13.5px;
-  line-height: 1.65;
-  color: #ccc;
-}
-.bullet:last-child { border-bottom: none; }
-.bullet-arrow {
-  color: var(--accent);
-  font-family: var(--mono);
-  font-size: 11px;
-  flex-shrink: 0;
-  margin-top: 3px;
-}
-.cite {
-  display: inline-block;
-  font-family: var(--mono);
-  font-size: 10px;
-  background: rgba(77,157,224,.12);
-  color: var(--blue);
-  border-radius: 2px;
-  padding: 0 5px;
-  margin-left: 4px;
-  cursor: pointer;
-  border: 1px solid rgba(77,157,224,.2);
-  text-decoration: none;
-  transition: background .12s;
-}
-.cite:hover { background: rgba(77,157,224,.22); }
+.bullet { display: flex; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--border); color: #ccc; font-size: 13.5px; }
+.bullet-arrow { color: var(--accent); font-family: var(--mono); font-size: 11px; margin-top: 3px; }
+.cite { font-family: var(--mono); font-size: 10px; background: rgba(77,157,224,.12); color: var(--blue); border-radius: 2px; padding: 0 5px; margin-left: 4px; text-decoration: none; border: 1px solid rgba(77,157,224,.2); display: inline-block; }
 
-/* ── Warning box ─────────────────────────────────────────────────────── */
-.warn-box {
-  background: rgba(240,180,41,.06);
-  border: 1px solid rgba(240,180,41,.2);
-  border-radius: var(--radius);
-  padding: 12px 16px;
-  margin-bottom: 12px;
-}
-.warn-title {
-  font-family: var(--mono);
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--yellow);
-  letter-spacing: .06em;
-  margin-bottom: 8px;
-}
-.warn-item {
-  font-size: 13px;
-  color: #c8a840;
-  padding: 3px 0 3px 14px;
-  position: relative;
-}
-.warn-item::before { content: '⚠'; position: absolute; left: 0; font-size: 10px; top: 5px; }
+.warn-box { background: rgba(240,180,41,.06); border: 1px solid rgba(240,180,41,.2); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 12px; }
+.warn-title { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--yellow); margin-bottom: 8px; }
+.warn-item { font-size: 13px; color: #c8a840; padding: 3px 0 3px 14px; position: relative; }
+.warn-item::before { content: '⚠'; position: absolute; left: 0; font-size: 10px; }
 
-/* ── Persons ─────────────────────────────────────────────────────────── */
-.persons-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.person-tag {
-  font-family: var(--mono);
-  font-size: 11px;
-  border: 1px solid var(--border2);
-  border-radius: 2px;
-  padding: 3px 10px;
-  color: var(--muted);
-}
+.source-row { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.src-idx { font-family: var(--mono); font-size: 11px; color: var(--muted2); min-width: 80px; }
+.src-url { font-family: var(--mono); font-size: 11px; color: var(--blue); cursor: pointer; display: block; word-break: break-all; margin-top: 4px; }
 
-/* ── Sources ─────────────────────────────────────────────────────────── */
-.source-row {
-  display: flex;
-  gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border);
-  align-items: flex-start;
-}
-.source-row:last-child { border-bottom: none; }
-.src-idx {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--muted2);
-  min-width: 28px;
-  flex-shrink: 0;
-  padding-top: 2px;
-}
-.src-info { flex: 1; min-width: 0; }
-.src-title-text {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.src-url {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--blue);
-  cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: block;
-  margin-top: 2px;
-}
-.src-url:hover { text-decoration: underline; }
-.src-type-badge {
-  font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: .06em;
-  color: var(--muted2);
-  text-transform: uppercase;
-  margin-top: 3px;
-}
+.quote-card { border-left: 2px solid var(--blue); background: var(--bg2); padding: 10px 16px; margin-bottom: 10px; }
+.quote-text { font-size: 14px; font-style: italic; color: var(--text); }
+.quote-meta { font-size: 12px; color: var(--muted); margin-top: 6px; }
 
-/* ── Headlines grid ──────────────────────────────────────────────────── */
-.hl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.hl-card {
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 12px 14px;
-}
-.hl-label {
-  font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--muted2);
-  margin-bottom: 5px;
-}
-.hl-text {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text);
-  line-height: 1.45;
-}
-.kw-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
-.kw {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: .04em;
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: 2px;
-  padding: 3px 9px;
-  color: var(--muted);
-}
-
-/* ── Quotes ──────────────────────────────────────────────────────────── */
-.quote-card {
-  border-left: 2px solid var(--blue);
-  background: var(--bg2);
-  border-radius: 0 var(--radius) var(--radius) 0;
-  padding: 10px 16px;
-  margin-bottom: 10px;
-}
-.quote-text {
-  font-size: 14px;
-  font-style: italic;
-  color: var(--text);
-  line-height: 1.6;
-  margin-bottom: 6px;
-}
-.quote-meta { font-size: 12px; color: var(--muted); display: flex; gap: 10px; align-items: center; }
-.q-direct { font-family: var(--mono); font-size: 9px; letter-spacing:.05em; background: rgba(59,202,122,.12); color: var(--green); border-radius: 2px; padding: 2px 6px; }
-.q-para   { font-family: var(--mono); font-size: 9px; letter-spacing:.05em; background: rgba(240,180,41,.1);  color: var(--yellow); border-radius: 2px; padding: 2px 6px; }
-
-/* ── Top action bar ──────────────────────────────────────────────────── */
-.result-topbar {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-.copy-btn {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: .06em;
-  background: transparent;
-  border: 1px solid var(--border2);
-  border-radius: var(--radius);
-  color: var(--muted);
-  padding: 5px 12px;
-  cursor: pointer;
-  transition: all .12s;
-}
-.copy-btn:hover { border-color: var(--text); color: var(--text); }
-
-/* ── Error box ───────────────────────────────────────────────────────── */
-.error-box {
-  background: rgba(230,59,59,.08);
-  border: 1px solid rgba(230,59,59,.25);
-  border-radius: var(--radius);
-  padding: 16px;
-  font-family: var(--mono);
-  font-size: 12px;
-  color: var(--accent2);
-  line-height: 1.7;
-}
-
-/* ── Scrollbar ───────────────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+.result-topbar { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 16px; }
+.export-menu { display: flex; gap: 6px; }
+.error-box { background: rgba(230,59,59,.08); border: 1px solid rgba(230,59,59,.25); border-radius: var(--radius); padding: 16px; font-family: var(--mono); color: var(--accent2); }
 </style>
 </head>
 <body>
 <div class="shell">
 
-<header>
-  <div class="logo-mark">
-    <svg viewBox="0 0 24 24" stroke-width="1.5">
-      <circle cx="12" cy="12" r="3"/>
-      <circle cx="12" cy="12" r="8"/>
-      <line x1="12" y1="2" x2="12" y2="4"/>
-      <line x1="12" y1="20" x2="12" y2="22"/>
-      <line x1="2" y1="12" x2="4" y2="12"/>
-      <line x1="20" y1="12" x2="22" y2="12"/>
-    </svg>
-  </div>
-  <div class="header-text">
-    <h1>OSINT Intelligence Engine</h1>
-    <p>Investigative Analysis · Follow the Money · Expose the Network</p>
-  </div>
-  <div class="header-badge">Private Backend</div>
-</header>
+  <header>
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/></svg>
+    </div>
+    <div class="header-text">
+      <h1>OSINT Multi-Pass Factory</h1>
+      <p>Unified Cloud Host Interface Terminal · Autonomous Deep-Web Ingestion Hub</p>
+    </div>
+    <div class="header-badge">Cloud Live</div>
+  </header>
 
-<div class="panel">
-  <div class="panel-label">AI Provider</div>
-  <div class="provider-grid">
-    <div class="prov active" data-p="groq" onclick="selectProvider(this)">
-      <span class="prov-name">GROQ</span>
-      <span class="prov-model">Llama 3.3 70B</span>
-      <span class="prov-free">FREE</span>
+  <div class="panel">
+    <div class="panel-label">Investigative Context Parameter Entry</div>
+    <div class="search-wrap">
+      <input type="text" id="targetInput" class="search-input" placeholder="Type a corporate keyword, target entity name, or complete research question..." />
+      <button class="btn btn-primary" id="runBtn" onclick="dispatchDeepResearch()">LAUNCH OSINT SCANNERS</button>
     </div>
-    <div class="prov" data-p="gemini" onclick="selectProvider(this)">
-      <span class="prov-name">GEMINI</span>
-      <span class="prov-model">2.5 Flash</span>
-      <span class="prov-free">FREE</span>
-    </div>
-    <div class="prov" data-p="claude" onclick="selectProvider(this)">
-      <span class="prov-name">CLAUDE</span>
-      <span class="prov-model">Opus 4.5</span>
-      <span class="prov-paid">PAID</span>
-    </div>
-    <div class="prov" data-p="openai" onclick="selectProvider(this)">
-      <span class="prov-name">OPENAI</span>
-      <span class="prov-model">GPT-4o</span>
-      <span class="prov-paid">PAID</span>
+
+    <div class="row">
+      <span style="font-family:var(--mono);font-size:10px;color:var(--muted2);">ANALYTICAL MODIFIER VECTOR:</span>
+      <button class="chip active" data-angle="all" onclick="setChip(this)">Exhaustive Profile Overview</button>
+      <button class="chip" data-angle="financial" onclick="setChip(this)">Scandals & Controversies Focus</button>
+      <button class="chip" data-angle="networks" onclick="setChip(this)">Hidden Affiliations & Asset Trails</button>
     </div>
   </div>
+
+  <div id="statusBar"><div class="dot"></div><span>Ready — Unified cloud infrastructure standing by for deployment queries.</span></div>
+  <div id="results"></div>
+
 </div>
 
-<div class="panel">
-  <div class="panel-label">Target Entity</div>
-  <div class="search-wrap">
-    <input type="text" id="targetInput" class="search-input"
-           placeholder="Enter keywords, entity name, or investigative question..." />
-    <button class="btn btn-primary" id="runBtn" onclick="runOsint()">
-      INVESTIGATE ↗
-    </button>
-  </div>
+<script>
+// ── Production Self-Sensing Relative Routes Configuration ─────────────────────
+const INITIALIZE_URL = "/api/v1/analyze";
+const MONITOR_URL    = "/api/v1/status/";
 
-  <div class="row" style="margin-bottom:10px">
-    <span style="font-family:var(--mono);font-size:10px;color:var(--muted2);letter-spacing:.06em;text-transform:uppercase">Angle:</span>
-    <button class="chip active" data-angle="all"             onclick="setChip(this,'angle')">All</button>
-    <button class="chip"        data-angle="funding"        onclick="setChip(this,'angle')">Funding</button>
-    <button class="chip"        data-angle="founders"       onclick="setChip(this,'angle')">Founders</button>
-    <button class="chip"        data-angle="contradictions" onclick="setChip(this,'angle')">Contradictions</button>
-    <button class="chip"        data-angle="timeline"        onclick="setChip(this,'angle')">Timeline</button>
-  </div>
+let selectedAngle = 'all';
+let dataBriefingCache = null;
+let statusIntervalLoop = null;
 
-  <div class="row">
-    <span style="font-family:var(--mono);font-size:10px;color:var(--muted2);letter-spacing:.06em;text-transform:uppercase">Depth:</span>
-    <select id="depthSel">
-      <option value="standard">Standard (Top 5)</option>
-      <option value="deep">Deep Dive (Top 15)</option>
-    </select>
-    <span style="font-family:var(--mono);font-size:10px;color:var(--muted2);letter-spacing:.06em;text-transform:uppercase;margin-left:8px">Mode:</span>
-    <select id="modeSel">
-      <option value="briefing">Briefing</option>
-      <option value="article">Article</option>
-      <option value="thread">Thread</option>
-      <option value="newsletter">Newsletter</option>
-    </select>
-    <label style="display:flex;align-items:center;gap:6px;margin-left:8px;cursor:pointer">
-      <input type="checkbox" id="quotesChk" checked />
-      <span style="font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.06em">QUOTES</span>
-    </label>
-    <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-      <input type="checkbox" id="seoChk" checked />
-      <span style="font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.06em">SEO</span>
-    </label>
-    <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-      <input type="checkbox" id="legalChk" />
-      <span style="font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.06em">LEGAL PASS</span>
-    </label>
-  </div>
-</div>
-
-<div id="statusBar">
-  <div class="dot"></div>
-  <span>Ready — select configurations and execute dynamic discovery</span>
-</div>
-
-<div id="results"></div>
-
-</div><script>
-// ── API Router Backend Endpoints ───────────────────────────────────────────
-const BACKEND_URL = "http://127.0.0.1:8000/api/v1/analyze";
-const STATUS_URL  = "http://127.0.0.1:8000/api/v1/status/";
-
-// ── App State ──────────────────────────────────────────────────────────────
-let currentProvider = 'groq';
-let currentAngle    = 'all';
-let briefingData    = null;
-let pollingTracker  = null;
-
-// ── UI Controller Event Handlers ───────────────────────────────────────────
-function selectProvider(el) {
-  document.querySelectorAll('.prov').forEach(p => p.classList.remove('active'));
-  el.classList.add('active');
-  currentProvider = el.dataset.p;
-}
-
-function setChip(el, group) {
+function setChip(el) {
   el.closest('.row').querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
-  if (group === 'angle') currentAngle = el.dataset.angle;
+  selectedAngle = el.dataset.angle;
 }
 
 function setStatus(msg, state='idle') {
@@ -723,229 +162,195 @@ function setStatus(msg, state='idle') {
   bar.innerHTML = `<div class="dot ${colors[state]}"></div><span>${msg}</span>`;
 }
 
-// ── Core Async Communications Layer ────────────────────────────────────────
-async function runOsint() {
+async function dispatchDeepResearch() {
   const target = document.getElementById('targetInput').value.trim();
-  if (!target) { setStatus('Enter an investigative topic or question first', 'err'); return; }
+  if (!target) { setStatus("An investigative keyword profile is mandatory.", "err"); return; }
 
-  const mode = document.getElementById('modeSel').value;
-  
-  // Clear layout containers and toggle state trackers
   document.getElementById('results').innerHTML = '';
   document.getElementById('runBtn').disabled = true;
-  setStatus("Enqueuing job pipeline framework on local engine...", "loading");
+  setStatus("Enqueuing research token down into cloud background workers...", "loading");
 
   try {
-    // 1. Fire non-blocking dispatch initialization payload to FastAPI server
-    const response = await fetch(BACKEND_URL, {
+    const initResponse = await fetch(INITIALIZE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        target: target,
-        urls: [], // Left blank — background Python modules discover links autonomously via query
-        provider: currentProvider,
-        mode: mode
-      })
+      body: JSON.stringify({ target: target, angle: selectedAngle })
     });
 
-    if (!response.ok) throw new Error(`Server tracking initialization failed with code: ${response.status}`);
+    if (!initResponse.ok) throw new Error(`App Server returned crash status code: ${initResponse.status}`);
+    const initResult = await initResponse.json();
     
-    const registrationResult = await response.json();
-    const jobId = registrationResult.job_id;
+    trackPipelineProgress(initResult.job_id, target);
 
-    // 2. Fire independent async loop parsing status trackers
-    beginStatusPolling(jobId, target);
-
-  } catch (error) {
-    setStatus('Connection Error: ' + error.message, 'err');
-    document.getElementById('results').innerHTML = `<div class="error-box">CRITICAL CONNECTION ERROR: Ensure your FastAPI application server is running locally on port 8000. Error details: ${error.message}</div>`;
+  } catch (err) {
+    setStatus("Connection Interrupted", "err");
+    document.getElementById('results').innerHTML = `<div class="error-box">CRITICAL CONNECTION FAULT: Cloud terminal synchronization anomaly. Stack log trace: ${err.message}</div>`;
     document.getElementById('runBtn').disabled = false;
   }
 }
 
-// ── Polling & Lifecycle Management ──────────────────────────────────────────
-function beginStatusPolling(jobId, target) {
-  if (pollingTracker) clearInterval(pollingTracker);
+function trackPipelineProgress(jobId, targetName) {
+  if (statusIntervalLoop) clearInterval(statusIntervalLoop);
 
-  pollingTracker = setInterval(async () => {
+  statusIntervalLoop = setInterval(async () => {
     try {
-      const statusResponse = await fetch(`${STATUS_URL}${jobId}`);
-      if (!statusResponse.ok) throw new Error("Status registry communication fault.");
-      
-      const jobState = await statusResponse.json();
+      const response = await fetch(`${MONITOR_URL}${jobId}`);
+      if (!response.ok) throw new Error("Status registry cloud sync dropped.");
+      const jobState = await response.json();
 
-      // Cycle UI classes contextually across state adjustments
       if (jobState.status === "queued") {
-        setStatus("Job placed in background execution queue...", "loading");
+        setStatus("Job allocated inside background container app execution queues...", "loading");
       } else if (jobState.status === "ingesting_data") {
-        setStatus("Autonomous Discovery Active: Injecting search strings and harvesting links...", "loading");
+        setStatus("Deep Scrapers Active: Crawling media outlets, press releases, and legal logs...", "loading");
       } else if (jobState.status === "ai_generation") {
-        setStatus(`Scraping complete. Core modeling ongoing via [${currentProvider.toUpperCase()}]...`, "loading");
+        setStatus("Data harvested. Processing intelligence maps via LLAMA 3.3 clusters...", "loading");
       } else if (jobState.status === "completed") {
-        clearInterval(pollingTracker);
-        setStatus("Context maps constructed successfully.", "ok");
+        clearInterval(statusIntervalLoop);
+        setStatus("Dossier compiled successfully with live citations.", "ok");
         
-        briefingData = jobState.data;
-        renderBriefing(target, briefingData);
+        dataBriefingCache = jobState.data;
+        renderInterfaceDashboard(targetName, dataBriefingCache);
         document.getElementById('runBtn').disabled = false;
       } else if (jobState.status === "failed") {
-        clearInterval(pollingTracker);
-        throw new Error(jobState.data?.error || "Pipeline run failure exception recorded.");
+        clearInterval(statusIntervalLoop);
+        throw new Error(jobState.data?.error || "Pipeline cloud configuration exception trace.");
       }
-    } catch (pollingError) {
-      clearInterval(pollingTracker);
-      setStatus('Runtime Error: ' + pollingError.message, 'err');
-      document.getElementById('results').innerHTML = `<div class="error-box">PIPELINE CRASH EXCEPTION: ${pollingError.message}</div>`;
+    } catch (e) {
+      clearInterval(statusIntervalLoop);
+      setStatus("Pipeline Crash", "err");
+      document.getElementById('results').innerHTML = `<div class="error-box">PIPELINE TASK TERMINATED: ${e.message}</div>`;
       document.getElementById('runBtn').disabled = false;
     }
-  }, 2000); // Poll status registry every 2 seconds
+  }, 2000);
 }
 
-// ── Document Object Model Template Rendering ─────────────────────────────
-function renderBriefing(target, b) {
-  const sources = b.sources || [];
-  const srcMap  = Object.fromEntries(sources.map(s => [s.index, s]));
-  const conf    = b.confidence || {};
+function renderInterfaceDashboard(targetName, payload) {
+  const sources = payload.sources || [];
+  const srcMap = Object.fromEntries(sources.map(s => [s.index, s]));
+  const conf = payload.confidence || {};
 
   function linkBullets(arr) {
-    if (!arr?.length) return `<div class="bullet"><span class="bullet-arrow">▸</span><span>No verification data extracted for this segment.</span></div>`;
-    return arr.map(item => {
-      const linked = item.replace(/\[Source (\d+)\]/g, (_, n) => {
-        const s = srcMap[+n];
-        return `<a class="cite" href="${s?.url || '#'}" target="_blank" title="${s?.title || 'External Source Link'}">[Source ${n}]</a>`;
+    if (!arr?.length) return `<div class="bullet"><span class="bullet-arrow">▸</span><span>No baseline context records logged for this node space.</span></div>`;
+    return arr.map(text => {
+      const linkedOutput = text.replace(/\[Source (\d+)\]/g, (_, idx) => {
+        const linkNode = srcMap[+idx];
+        return `<a class="cite" href="${linkNode?.url || '#'}" target="_blank">[Source ${idx}]</a>`;
       });
-      return `<div class="bullet"><span class="bullet-arrow">▸</span><span>${linked}</span></div>`;
+      return `<div class="bullet"><span class="bullet-arrow">▸</span><span>${linkedOutput}</span></div>`;
     }).join('');
   }
 
-  const structuralCards = [
-    { num:'01', key:'context', title:'Context & Covert Identity' },
-    { num:'02', key:'network', title:'Human Network & Affiliations (Kundali)' },
-    { num:'03', key:'trail',   title:'Paper Trail & Money Trail' },
-    { num:'04', key:'guns',    title:'Smoking Guns & Contradictions' },
-  ];
-
-  const toggleQuotes = document.getElementById('quotesChk').checked;
-  const toggleSEO    = document.getElementById('seoChk').checked;
-
   let tabsMarkup = `
     <div class="tabs">
-      <div class="tab active" onclick="switchTab('briefing',this)">Core Intelligence Briefing</div>
-      ${toggleQuotes ? `<div class="tab" onclick="switchTab('quotes',this)">Extracted Quotes (${b.quotes?.length || 0})</div>` : ''}
-      ${toggleSEO    ? `<div class="tab" onclick="switchTab('seo',this)">SEO & Headlines</div>` : ''}
-      <div class="tab" onclick="switchTab('sources',this)">Audit Sources (${sources.length})</div>
+      <div class="tab active" onclick="toggleActivePane('briefing',this)">Dossier Layout Matrix</div>
+      <div class="tab" onclick="toggleActivePane('quotes',this)">Verbatim Statements (${payload.quotes?.length || 0})</div>
+      <div class="tab" onclick="toggleActivePane('sources',this)">Verified Reference Links (${sources.length})</div>
     </div>`;
 
-  // Briefing Pane Layout Builder
   let briefingPane = `<div id="tab-briefing" class="tab-pane visible">`;
-  structuralCards.forEach(sec => {
-    const level = conf[sec.key] || 'medium';
+  const blueprints = [
+    { num:'01', key:'context', title:'Historical Background & Identity Timelines' },
+    { num:'02', key:'network', title:'Human Networks, Founders & Affiliations' },
+    { num:'03', key:'trail',   title:'Asset Tracking, Money & Paper Trails' },
+    { num:'04', key:'guns',    title:'Scandals, Criticisms & Controversies (Smoking Guns)' }
+  ];
+
+  blueprints.forEach(card => {
+    const scale = conf[card.key] || 'medium';
     briefingPane += `
       <div class="sec">
         <div class="sec-head">
-          <span class="sec-num">${sec.num}</span>
-          <span class="sec-title">${sec.title}</span>
-          <span class="conf conf-${level}">${level.toUpperCase()} CONFIDENCE</span>
+          <span class="sec-num">${card.num}</span><span class="sec-title">${card.title}</span>
+          <span class="conf conf-${scale}">${scale} Verification Confidence</span>
         </div>
-        <div class="sec-body">${linkBullets(b[sec.key])}</div>
+        <div class="sec-body">${linkBullets(payload[card.key])}</div>
       </div>`;
   });
 
-  if (b.needs_corroboration?.length) {
-    briefingPane += `<div class="warn-box"><div class="warn-title">⚠ PRE-PUBLICATION CORROBORATION FLAGS</div>`;
-    b.needs_corroboration.forEach(item => briefingPane += `<div class="warn-item">${item}</div>`);
+  if (payload.needs_corroboration?.length) {
+    briefingPane += `<div class="warn-box"><div class="warn-title">⚠ PRE-PUBLICATION SPIN CHECK AND CORROBORATION CRITERIA</div>`;
+    payload.needs_corroboration.forEach(item => briefingPane += `<div class="warn-item">${item}</div>`);
     briefingPane += `</div>`;
-  }
-  if (b.named_persons?.length) {
-    briefingPane += `<div class="panel" style="margin-top:0"><div class="panel-label">Right-of-Reply Contact Checklist</div><div class="persons-wrap">`;
-    b.named_persons.forEach(p => briefingPane += `<span class="person-tag">☐ ${p}</span>`);
-    briefingPane += `</div></div>`;
   }
   briefingPane += `</div>`;
 
-  // Quotes Panel Builder
   let quotesPane = `<div id="tab-quotes" class="tab-pane">`;
-  if (b.quotes?.length) {
-    b.quotes.forEach(q => {
-      quotesPane += `
-        <div class="quote-card">
-          <div class="quote-text">"${q.quote}"</div>
-          <div class="quote-meta">
-            <span class="${q.is_direct ? 'q-direct' : 'q-para'}">${q.is_direct ? 'VERBATIM DIRECT' : 'PARAPHRASE'}</span>
-            <strong>${q.speaker || 'Unverified Speaker'}</strong>
-            ${q.date ? `· ${q.date}` : ''}
-          </div>
-        </div>`;
+  if (payload.quotes?.length) {
+    payload.quotes.forEach(q => {
+      quotesPane += `<div class="quote-card"><div class="quote-text">"${q.quote}"</div><div class="quote-meta">── **${q.speaker}** ${q.source_url ? `· <a href="${q.source_url}" target="_blank" style="color:var(--blue)">Source Link</a>` : ''}</div></div>`;
     });
-  } else { quotesPane += `<p style="color:var(--muted);font-size:12px;padding:12px 4px">Zero direct or paraphrased quotes found.</p>`; }
+  } else { quotesPane += `<p style="color:var(--muted);padding:12px;">Zero verified raw statements extracted across content nodes.</p>`; }
   quotesPane += `</div>`;
 
-  // SEO Elements Builder
-  let seoPane = `<div id="tab-seo" class="tab-pane">`;
-  if (b.headline_variants) {
-    seoPane += `<div class="hl-grid" style="margin-bottom:14px">`;
-    [['seo','Search Engine Optimization Title'],['clickable','Viral / High Click-Through Rate'],['print','Standard Print Layout'],['thread_hook','Social Thread Inception Hook']].forEach(([k, label]) => {
-      if (b.headline_variants[k]) seoPane += `<div class="hl-card"><div class="hl-label">${label}</div><div class="hl-text">${b.headline_variants[k]}</div></div>`;
-    });
-    seoPane += `</div>`;
-  }
-  if (b.keywords?.length) {
-    seoPane += `<div class="kw-wrap">`;
-    b.keywords.forEach(word => seoPane += `<span class="kw">${word}</span>`);
-    seoPane += `</div>`;
-  }
-  seoPane += `</div>`;
-
-  // Source Audit Matrix Mapping View
   let sourcesPane = `<div id="tab-sources" class="tab-pane">`;
   if (sources.length) {
     sources.forEach(s => {
       sourcesPane += `
         <div class="source-row">
-          <div class="src-idx">[Source ${s.index}]</div>
-          <div class="src-info">
-            <div class="src-title-text">${s.title || s.domain || 'Untargeted Content Node'}</div>
+          <span class="src-idx">[Source ${s.index}]</span>
+          <div style="flex:1">
+            <strong style="color:var(--text); font-size:13px;">${s.title || s.domain}</strong>
             <span class="src-url" onclick="window.open('${s.url}','_blank')">${s.url}</span>
-            <div class="src-type-badge">${s.type || 'web'} · origin domain node: ${s.domain}</div>
           </div>
         </div>`;
     });
-  } else { sourcesPane += `<p style="color:var(--muted);font-size:12px;padding:12px 4px">No autonomous sources logged.</p>`; }
+  } else { sourcesPane += `<p style="color:var(--muted);padding:12px;">No source lookup data logged.</p>`; }
   sourcesPane += `</div>`;
 
-  // Inject structural configurations down to viewport engine containers
   document.getElementById('results').innerHTML = `
     <div class="result-topbar">
-      <div>
-        <div class="entity-header">${target}</div>
-        <div class="entity-meta">${new Date().toLocaleDateString()} · Source Context Nodes Evaluated: ${sources.length}</div>
+      <div><div class="entity-header">${targetName}</div><div class="entity-meta">Automated Verification Profile Timestamp: ${new Date().toLocaleDateString()}</div></div>
+      <div class="export-menu">
+        <button class="copy-btn" onclick="saveDataPackage('md','${targetName}')">DOWNLOAD COMPASS REPORT .MD</button>
+        <button class="copy-btn" onclick="saveDataPackage('json','${targetName}')">DOWNLOAD DATA STRUCTURE .JSON</button>
       </div>
-      <button class="copy-btn" onclick="copyJSON()">COPY BRIEFING JSON</button>
     </div>
-    ${tabsMarkup}
-    ${briefingPane}
-    ${toggleQuotes ? quotesPane : ''}
-    ${toggleSEO ? seoPane : ''}
-    ${sourcesPane}`;
+    ${tabsMarkup}${briefingPane}${quotesPane}${sourcesPane}`;
 }
 
-function switchTab(tabName, element) {
+function toggleActivePane(name, component) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('visible'));
-  element.classList.add('active');
-  const targetPane = document.getElementById('tab-' + tabName);
-  if (targetPane) targetPane.classList.add('visible');
+  component.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('visible');
 }
 
-function copyJSON() {
-  if (!briefingData) return;
-  navigator.clipboard.writeText(JSON.stringify(briefingData, null, 2));
-  alert("Briefing payload data copied to clipboard.");
+function saveDataPackage(extension, titleString) {
+  if (!dataBriefingCache) return;
+  let textBuffer = ""; let dataMime = "text/plain";
+
+  if (extension === 'json') {
+    textBuffer = JSON.stringify(dataBriefingCache, null, 2); dataMime = "application/json";
+  } else if (extension === 'md') {
+    dataMime = "text/markdown";
+    textBuffer = `# AUTOMATED DEEP-OSINT EXTRACTION REPORT: ${titleString.toUpperCase()}\n\n*Generated via Multi-Pass Factory Environment on ${new Date().toDateString()}*\n\n---\n\n`;
+    
+    const categories = [
+      { h: "1. Identity Background & Historical Timelines", k: "context" },
+      { h: "2. Human Networks, Founders & Strategic Alliances", k: "network" },
+      { h: "3. Asset Registries & Asset Flows", k: "trail" },
+      { h: "4. Scandals, Criticisms & Discrepancies (Smoking Guns)", k: "guns" }
+    ];
+
+    categories.forEach(node => {
+      textBuffer += `## ${node.h}\n`;
+      (dataBriefingCache[node.k] || []).forEach(bullet => textBuffer += `- ${bullet}\n`);
+      textBuffer += `\n`;
+    });
+
+    textBuffer += `## 5. Audit References & Verified Source Links\n`;
+    (dataBriefingCache.sources || []).forEach(s => textBuffer += `- **[Source ${s.index}]** ${s.title || s.domain} ── ${s.url}\n`);
+  }
+
+  const outputBlob = new Blob([textBuffer], { type: dataMime });
+  const virtualAnchor = document.createElement('a');
+  virtualAnchor.href = URL.createObjectURL(outputBlob);
+  virtualAnchor.download = `OSINT_Dossier_${titleString.replace(/\s+/g, '_')}.${extension}`;
+  document.body.appendChild(virtualAnchor); virtualAnchor.click(); document.body.removeChild(virtualAnchor);
 }
 
-// Global keypress listener tracking command layout operations
-document.getElementById('targetInput').addEventListener('keydown', event => {
-  if (event.key === 'Enter') runOsint();
+document.getElementById('targetInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') dispatchDeepResearch();
 });
 </script>
 </body>
