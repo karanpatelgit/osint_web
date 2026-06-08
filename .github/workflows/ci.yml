@@ -1,53 +1,56 @@
-name: OSINT Engine CI Pipeline
+name: OSINT Autonomous Research Loop
 
-# Controls when the action will run
 on:
-  push:
-    branches: [ main, master, develop ]
-  pull_request:
-    branches: [ main, master ]
+  repository_dispatch:
+    types: [trigger-research]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Investigative Keyword / Topic / Question'
+        required: true
+        type: string
+      provider:
+        description: 'AI Processing Engine'
+        required: true
+        default: 'groq'
+        type: choice
+        options:
+          - groq
+          - gemini
 
-# Ensure concurrent pushes cancel the previous lagging builds to save your free monthly minutes
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+permissions:
+  contents: write # Grants the runner clearance to write data back to your repository
 
 jobs:
-  validate-environment:
+  investigate:
     runs-on: ubuntu-latest
-    
-    permissions:
-      contents: read # Secure minimum clearance rule required to check out files
-
     steps:
-    # Step 1: Clone the code inside your repo onto GitHub's runner machine
     - name: Checkout Codebase
       uses: actions/checkout@v4
 
-    # Step 2: Provision a clean Python development runtime environment
-    - name: Set up Python 3.12
+    - name: Set Up Python 3.11
       uses: actions/setup-python@v5
       with:
-        python-version: '3.12'
-        cache: 'pip' # Speeds up installation times dramatically on subsequent pushes
+        python-version: '3.11'
+        cache: 'pip'
 
-    # Step 3: Upgrade critical management modules
-    - name: Upgrade Pipeline Managers
+    - name: Install Dependencies
       run: |
-        python -m pip install --upgrade pip setuptools wheel
+        python -m pip install --upgrade pip
+        pip install requests beautifulsoup4 duckduckgo-search openai google-generativeai pydantic
 
-    # Step 4: Ingest and install your requirements framework map
-    - name: Install Application Dependencies
+    - name: Execute Autonomous Research Scraper
+      env:
+        GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       run: |
-        if [ -f requirements.txt ]; then
-          pip install -r requirements.txt
-        else
-          echo "ERROR: requirements.txt not found in project root!"
-          exit 1
-        fi
+        # Call the script file using the inputs passed from GitHub's interface
+        python osint_writer_engine.py --query "${{ github.event.inputs.target }}" --provider "${{ github.event.inputs.provider }}" --export-json
 
-    # Step 5: Execute a strict syntax and compilation test 
-    - name: Code Compilation Integrity Check
+    - name: Commit and Push Intel Artifacts
       run: |
-        echo "Validating syntax architecture..."
-        python -m compileall .
+        git config --global user.name "OSINT Engine Bot"
+        git config --global user.email "actions@github.com"
+        git add output/latest_briefing.json
+        git commit -m "data: compiled automated briefing update for target [${{ github.event.inputs.target }}]" || exit 0
+        git push origin main
