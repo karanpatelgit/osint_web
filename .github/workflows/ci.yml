@@ -1,0 +1,53 @@
+name: OSINT Engine CI Pipeline
+
+# Controls when the action will run
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+
+# Ensure concurrent pushes cancel the previous lagging builds to save your free monthly minutes
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-environment:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read # Secure minimum clearance rule required to check out files
+
+    steps:
+    # Step 1: Clone the code inside your repo onto GitHub's runner machine
+    - name: Checkout Codebase
+      uses: actions/checkout@v4
+
+    # Step 2: Provision a clean Python development runtime environment
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip' # Speeds up installation times dramatically on subsequent pushes
+
+    # Step 3: Upgrade critical management modules
+    - name: Upgrade Pipeline Managers
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+
+    # Step 4: Ingest and install your requirements framework map
+    - name: Install Application Dependencies
+      run: |
+        if [ -f requirements.txt ]; then
+          pip install -r requirements.txt
+        else
+          echo "ERROR: requirements.txt not found in project root!"
+          exit 1
+        fi
+
+    # Step 5: Execute a strict syntax and compilation test 
+    - name: Code Compilation Integrity Check
+      run: |
+        echo "Validating syntax architecture..."
+        python -m compileall .
