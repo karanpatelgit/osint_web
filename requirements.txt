@@ -21,5 +21,7 @@ rich>=13.7.0
 
 # --- Async Web Framework Architecture (If implementing Phase 2/4 Web Servers) ---
 fastapi>=0.110.0
+# --- ------------------- rich module------------------- ---
+rich
 uvicorn>=0.28.0
 pydantic>=2.6.0
