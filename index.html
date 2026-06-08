@@ -89,6 +89,13 @@ input[type="text"], select { background: var(--bg3); border: 1px solid var(--bor
 .bullet-arrow { color: var(--accent); font-family: var(--mono); font-size: 11px; margin-top: 3px; }
 .cite { font-family: var(--mono); font-size: 10px; background: rgba(77,157,224,.12); color: var(--blue); border-radius: 2px; padding: 0 5px; margin-left: 4px; text-decoration: none; border: 1px solid rgba(77,157,224,.2); display: inline-block; }
 
+/* ── Article Style Extensions ────────────────────────────────────────── */
+.article-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius2); padding: 24px; color: #d1d1d6; font-size: 15px; line-height: 1.75; }
+.article-h2 { font-family: var(--mono); font-size: 13px; text-transform: uppercase; color: var(--accent2); margin: 22px 0 10px 0; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px; }
+.article-h2::before { content: '■'; font-size: 10px; color: var(--accent); }
+.article-p { margin-bottom: 14px; text-align: justify; font-weight: 400; }
+.article-highlight { background: rgba(230,59,59,0.08); border-left: 3px solid var(--accent); padding: 12px 16px; margin: 16px 0; font-style: italic; border-radius: 0 var(--radius) var(--radius) 0; color: #e8e8ec; }
+
 .warn-box { background: rgba(240,180,41,.06); border: 1px solid rgba(240,180,41,.2); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 12px; }
 .warn-title { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--yellow); margin-bottom: 8px; }
 .warn-item { font-size: 13px; color: #c8a840; padding: 3px 0 3px 14px; position: relative; }
@@ -224,6 +231,7 @@ function trackPipelineProgress(jobId, targetName) {
   }, 2000);
 }
 
+// ── DOM Layout Content Builders ──────────────────────────────────────────────
 function renderInterfaceDashboard(targetName, payload) {
   const sources = payload.sources || [];
   const srcMap = Object.fromEntries(sources.map(s => [s.index, s]));
@@ -240,14 +248,47 @@ function renderInterfaceDashboard(targetName, payload) {
     }).join('');
   }
 
+  // Fallback structural synthesis array generation for deep narrative article stitching
+  const contextText = (payload.context || []).join(' ');
+  const networkText = (payload.network || []).join(' ');
+  const trailText = (payload.trail || []).join(' ');
+  const controversyText = (payload.guns || []).join(' ');
+
   let tabsMarkup = `
     <div class="tabs">
-      <div class="tab active" onclick="toggleActivePane('briefing',this)">Dossier Layout Matrix</div>
+      <div class="tab active" onclick="toggleActivePane('analysis-article',this)">Executive Deep Essay</div>
+      <div class="tab" onclick="toggleActivePane('briefing',this)">Data Matrix</div>
       <div class="tab" onclick="toggleActivePane('quotes',this)">Verbatim Statements (${payload.quotes?.length || 0})</div>
-      <div class="tab" onclick="toggleActivePane('sources',this)">Verified Reference Links (${sources.length})</div>
+      <div class="tab" onclick="toggleActivePane('sources',this)">Verified References (${sources.length})</div>
     </div>`;
 
-  let briefingPane = `<div id="tab-briefing" class="tab-pane visible">`;
+  // ── NEW FEATURE: JURNALISTIC ESSAY DEEP ANALYSIS ARTICLE VIEW ────────────
+  let articlePane = `
+    <div id="tab-analysis-article" class="tab-pane visible">
+      <div class="article-card">
+        <h2 style="font-family:var(--mono); font-size:16px; font-weight:700; color:var(--text); margin-bottom:12px; text-transform:uppercase; border-bottom:1px solid var(--border); padding-bottom:8px;">
+          INVESTIGATIVE BRIEFING ARTICLE: ${targetName.toUpperCase()}
+        </h2>
+        
+        <div class="article-h2">I. Foundational Realities & Timelines</div>
+        <p class="article-p">${contextText || "No context data was found to generate a chronological timeline overview."}</p>
+        
+        <div class="article-h2">II. The Network Matrix & Affiliated Nodes</div>
+        <p class="article-p">${networkText || "No key personnel connections, parent holdings, or institutional networks mapped."}</p>
+        
+        <div class="article-highlight">
+          <strong>Key Editorial Directive:</strong> The structural alignments extracted across these verification vectors indicate notable transitions or vulnerabilities in public messaging layers.
+        </div>
+
+        <div class="article-h2">III. Paper Trails & Asset Parameters</div>
+        <p class="article-p">${trailText || "No verifiable financial reports, funding registries, or asset movements could be tracked."}</p>
+        
+        <div class="article-h2">IV. Critical Divergences & Controversies</div>
+        <p class="article-p" style="color:var(--accent2); font-weight:500;">${controversyText || "No direct operational discrepancies, public scandals, or legal disputes logged in current indices."}</p>
+      </div>
+    </div>`;
+
+  let briefingPane = `<div id="tab-briefing" class="tab-pane">`;
   const blueprints = [
     { num:'01', key:'context', title:'Historical Background & Identity Timelines' },
     { num:'02', key:'network', title:'Human Networks, Founders & Affiliations' },
@@ -305,7 +346,7 @@ function renderInterfaceDashboard(targetName, payload) {
         <button class="copy-btn" onclick="saveDataPackage('json','${targetName}')">DOWNLOAD DATA STRUCTURE .JSON</button>
       </div>
     </div>
-    ${tabsMarkup}${briefingPane}${quotesPane}${sourcesPane}`;
+    ${tabsMarkup}${articlePane}${briefingPane}${quotesPane}${sourcesPane}`;
 }
 
 function toggleActivePane(name, component) {
@@ -328,7 +369,7 @@ function saveDataPackage(extension, titleString) {
     const categories = [
       { h: "1. Identity Background & Historical Timelines", k: "context" },
       { h: "2. Human Networks, Founders & Strategic Alliances", k: "network" },
-      { h: "3. Asset Registries & Asset Flows", k: "trail" },
+      { h: "3. Money Trails & Paper Registries Structure", k: "trail" },
       { h: "4. Scandals, Criticisms & Discrepancies (Smoking Guns)", k: "guns" }
     ];
 
