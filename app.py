@@ -4,6 +4,7 @@ OSINT Multi-Pass Factory — Unified Production Cloud Deployment Backend
 ======================================================================
 Features:
 - Dual-Role Server Architecture (API Backend Hub + Static Frontend Servings)
+- Explicit Token Runway Management (Fixes 'max completion tokens reached')
 - Robust API Response Object/Dictionary Safety Layer
 - Production Dynamic Port Routing for Cloud Container Mapping
 """
@@ -79,7 +80,8 @@ async def run_deep_journalism_pipeline(job_id: str, target: str, angle: str):
         source_audit_matrix = []
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
 
-        for idx, url in enumerate(discovered_urls[:8]):
+        # Optimizing context processing bounds by reading the top 5 deepest references
+        for idx, url in enumerate(discovered_urls[:5]):
             try:
                 res = requests.get(url, headers=headers, timeout=8)
                 if res.status_code == 200:
@@ -87,7 +89,9 @@ async def run_deep_journalism_pipeline(job_id: str, target: str, angle: str):
                     for text_junk in soup(["script", "style", "nav", "footer", "header", "form"]):
                         text_junk.decompose()
                     
-                    clean_text = soup.get_text(separator=" ", strip=True)[:3500]
+                    # ENHANCEMENT: Slashed baseline memory usage limit per page down to 1800 characters.
+                    # This reduces contextual bloat so the model can dedicate its window space to generating text.
+                    clean_text = soup.get_text(separator=" ", strip=True)[:1800]
                     domain = urlparse(url).netloc
                     title = soup.title.string.strip() if soup.title else domain
                     
@@ -103,7 +107,7 @@ async def run_deep_journalism_pipeline(job_id: str, target: str, angle: str):
         system_instruction = (
             "You are an elite multi-agent system pairing a lead OSINT researcher with an investigative analyst. "
             "Analyze the raw data blobs provided to parse out critical context mapping profiles. "
-            "You must populate every array component with accurate facts extracted from the texts. "
+            "Formulate concise, high-signal summary sentences based STRICTLY on the text. "
             "Every text point or bullet you generate MUST end with an exact bracket citation tracking back to its source ID, for example: [Source 0]. "
             "Output strictly valid JSON matching this layout format, returning nothing else outside the object boundaries:\n"
             "{\n"
@@ -126,14 +130,16 @@ async def run_deep_journalism_pipeline(job_id: str, target: str, angle: str):
                 "model": "llama-3.3-70b-versatile",
                 "messages": [{"role": "system", "content": system_instruction}, {"role": "user", "content": user_content}],
                 "response_format": {"type": "json_object"},
-                "temperature": 0.15
+                "temperature": 0.15,
+                # ENHANCEMENT: Hardcoded max_tokens explicitly to 4000.
+                # This opens a massive generation runway for long-form scripting portfolios.
+                "max_tokens": 4000
             }
         )
 
         if response.status_code != 200:
             raise RuntimeError(f"AI cloud pipeline processing boundary crash: {response.text}")
 
-        # ── CRITICAL FIX: Robust Safe Parsing Engine ────────────────────────
         res_data = response.json()
         
         if "choices" not in res_data or not res_data["choices"]:
@@ -141,7 +147,6 @@ async def run_deep_journalism_pipeline(job_id: str, target: str, angle: str):
             
         choice = res_data["choices"][0]
         
-        # Guardrail checking if choice/message behaves as an object or a standard dictionary
         if hasattr(choice, "message"):
             msg_node = choice.message
             raw_content = msg_node.content if hasattr(msg_node, "content") else msg_node.get("content", "")
@@ -153,8 +158,6 @@ async def run_deep_journalism_pipeline(job_id: str, target: str, angle: str):
             raise RuntimeError("The model generated an completely empty content frame response.")
             
         output_json = json.loads(raw_content)
-        # ────────────────────────────────────────────────────────────────────
-        
         output_json["sources"] = source_audit_matrix
 
         # State Transition Execution
