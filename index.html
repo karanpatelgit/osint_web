@@ -595,7 +595,6 @@ select {
 <body>
 <div class="shell">
 
-<!-- ── Header ──────────────────────────────────────────────────────────── -->
 <header>
   <div class="logo-mark">
     <svg viewBox="0 0 24 24" stroke-width="1.5">
@@ -611,10 +610,9 @@ select {
     <h1>OSINT Intelligence Engine</h1>
     <p>Investigative Analysis · Follow the Money · Expose the Network</p>
   </div>
-  <div class="header-badge">Private</div>
+  <div class="header-badge">Private Backend</div>
 </header>
 
-<!-- ── Provider selector ───────────────────────────────────────────────── -->
 <div class="panel">
   <div class="panel-label">AI Provider</div>
   <div class="provider-grid">
@@ -625,12 +623,12 @@ select {
     </div>
     <div class="prov" data-p="gemini" onclick="selectProvider(this)">
       <span class="prov-name">GEMINI</span>
-      <span class="prov-model">2.0 Flash</span>
+      <span class="prov-model">2.5 Flash</span>
       <span class="prov-free">FREE</span>
     </div>
     <div class="prov" data-p="claude" onclick="selectProvider(this)">
       <span class="prov-name">CLAUDE</span>
-      <span class="prov-model">Sonnet 4 + Web</span>
+      <span class="prov-model">Opus 4.5</span>
       <span class="prov-paid">PAID</span>
     </div>
     <div class="prov" data-p="openai" onclick="selectProvider(this)">
@@ -641,36 +639,30 @@ select {
   </div>
 </div>
 
-<!-- ── Search ───────────────────────────────────────────────────────────── -->
 <div class="panel">
   <div class="panel-label">Target Entity</div>
   <div class="search-wrap">
     <input type="text" id="targetInput" class="search-input"
-           placeholder="Company name, person, NGO, scheme, brand..." />
+           placeholder="Enter keywords, entity name, or investigative question..." />
     <button class="btn btn-primary" id="runBtn" onclick="runOsint()">
       INVESTIGATE ↗
     </button>
   </div>
 
-  <!-- Angle chips -->
   <div class="row" style="margin-bottom:10px">
     <span style="font-family:var(--mono);font-size:10px;color:var(--muted2);letter-spacing:.06em;text-transform:uppercase">Angle:</span>
     <button class="chip active" data-angle="all"             onclick="setChip(this,'angle')">All</button>
-    <button class="chip"        data-angle="funding"         onclick="setChip(this,'angle')">Funding</button>
-    <button class="chip"        data-angle="network"         onclick="setChip(this,'angle')">Network</button>
-    <button class="chip"        data-angle="contradictions"  onclick="setChip(this,'angle')">Contradictions</button>
-    <button class="chip"        data-angle="legal"           onclick="setChip(this,'angle')">Legal</button>
+    <button class="chip"        data-angle="funding"        onclick="setChip(this,'angle')">Funding</button>
+    <button class="chip"        data-angle="founders"       onclick="setChip(this,'angle')">Founders</button>
+    <button class="chip"        data-angle="contradictions" onclick="setChip(this,'angle')">Contradictions</button>
     <button class="chip"        data-angle="timeline"        onclick="setChip(this,'angle')">Timeline</button>
   </div>
 
-  <!-- Depth + Mode -->
   <div class="row">
     <span style="font-family:var(--mono);font-size:10px;color:var(--muted2);letter-spacing:.06em;text-transform:uppercase">Depth:</span>
     <select id="depthSel">
-      <option value="standard">Standard</option>
-      <option value="deep">Deep Dive</option>
-      <option value="financial">Financial Focus</option>
-      <option value="network">Network Map</option>
+      <option value="standard">Standard (Top 5)</option>
+      <option value="deep">Deep Dive (Top 15)</option>
     </select>
     <span style="font-family:var(--mono);font-size:10px;color:var(--muted2);letter-spacing:.06em;text-transform:uppercase;margin-left:8px">Mode:</span>
     <select id="modeSel">
@@ -680,313 +672,198 @@ select {
       <option value="newsletter">Newsletter</option>
     </select>
     <label style="display:flex;align-items:center;gap:6px;margin-left:8px;cursor:pointer">
-      <input type="checkbox" id="quotesChk" />
+      <input type="checkbox" id="quotesChk" checked />
       <span style="font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.06em">QUOTES</span>
     </label>
     <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-      <input type="checkbox" id="seoChk" />
+      <input type="checkbox" id="seoChk" checked />
       <span style="font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.06em">SEO</span>
     </label>
     <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
       <input type="checkbox" id="legalChk" />
-      <span style="font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.06em">LEGAL</span>
+      <span style="font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.06em">LEGAL PASS</span>
     </label>
   </div>
 </div>
 
-<!-- ── Status ────────────────────────────────────────────────────────────── -->
 <div id="statusBar">
   <div class="dot"></div>
-  <span>Ready — select provider and enter target entity</span>
+  <span>Ready — select configurations and execute dynamic discovery</span>
 </div>
 
-<!-- ── Results ───────────────────────────────────────────────────────────── -->
 <div id="results"></div>
 
-</div><!-- /shell -->
+</div><script>
+// ── API Router Backend Endpoints ───────────────────────────────────────────
+const BACKEND_URL = "http://127.0.0.1:8000/api/v1/analyze";
+const STATUS_URL  = "http://127.0.0.1:8000/api/v1/status/";
 
-<script>
-// ── Keys injected by GitHub Actions at build time ──────────────────────────
-const KEYS = {
-  groq:    '__GROQ_API_KEY__',
-  gemini:  '__GEMINI_API_KEY__',
-  claude:  '__ANTHROPIC_API_KEY__',
-  openai:  '__OPENAI_API_KEY__',
-};
-
-// ── State ──────────────────────────────────────────────────────────────────
+// ── App State ──────────────────────────────────────────────────────────────
 let currentProvider = 'groq';
 let currentAngle    = 'all';
 let briefingData    = null;
+let pollingTracker  = null;
 
-// ── Provider select ────────────────────────────────────────────────────────
+// ── UI Controller Event Handlers ───────────────────────────────────────────
 function selectProvider(el) {
   document.querySelectorAll('.prov').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
   currentProvider = el.dataset.p;
 }
 
-// ── Chip toggle (angle) ────────────────────────────────────────────────────
 function setChip(el, group) {
   el.closest('.row').querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
   if (group === 'angle') currentAngle = el.dataset.angle;
 }
 
-// ── Status helper ──────────────────────────────────────────────────────────
 function setStatus(msg, state='idle') {
   const bar = document.getElementById('statusBar');
   const colors = { idle:'', loading:'yellow', ok:'green', err:'red' };
   bar.innerHTML = `<div class="dot ${colors[state]}"></div><span>${msg}</span>`;
 }
 
-// ── System prompt ──────────────────────────────────────────────────────────
-function buildSystem(target, angle, depth) {
-  const angleInstr = angle !== 'all'
-    ? `FOCUS ANGLE: Prioritise findings related to "${angle}".` : '';
-  const depthMap = {
-    standard:  'Standard investigative briefing.',
-    deep:      'Deep dive — include historical records, archived pages, secondary sources.',
-    financial: 'Focus on financial records, funding, investors, revenue, controversies.',
-    network:   'Focus on people network — founders, directors, advisors, political connections.',
-  };
-  return `You are an elite investigative journalist and OSINT expert with internet search capability.
-Research "${target}" thoroughly and produce a structured intelligence briefing.
-${angleInstr}
-${depthMap[depth] || depthMap.standard}
+// ── Core Async Communications Layer ────────────────────────────────────────
+async function runOsint() {
+  const target = document.getElementById('targetInput').value.trim();
+  if (!target) { setStatus('Enter an investigative topic or question first', 'err'); return; }
 
-SEARCH STRATEGY:
-1. Entity background, founding, official presence
-2. News, investigative reports, controversies
-3. Financial records, funding, ownership structure
-4. Legal cases, regulatory filings
-5. Key people, political connections, institutional ties
-6. Public statements, contradictions, deleted content
+  const mode = document.getElementById('modeSel').value;
+  
+  // Clear layout containers and toggle state trackers
+  document.getElementById('results').innerHTML = '';
+  document.getElementById('runBtn').disabled = true;
+  setStatus("Enqueuing job pipeline framework on local engine...", "loading");
 
-OUTPUT: Return ONLY a valid JSON object — no markdown, no preamble:
-{
-  "context": ["bullet ending with [Source N]", ...],
-  "network": ["bullet ending with [Source N]", ...],
-  "trail":   ["bullet ending with [Source N]", ...],
-  "guns":    ["bullet ending with [Source N]", ...],
-  "quotes":  [{"speaker":"","quote":"","date":"","source_url":"","is_direct":true}],
-  "confidence": {"context":"high|medium|low","network":"high|medium|low","trail":"high|medium|low","guns":"high|medium|low"},
-  "needs_corroboration": ["claim needing verification"],
-  "named_persons": ["Full Name"],
-  "keywords": ["keyword"],
-  "headline_variants": {"seo":"","clickable":"","print":"","thread_hook":""},
-  "sources": [{"index":0,"title":"","url":"","domain":"","type":"news|official|report|social|legal|other","snippet":""}]
-}
-
-RULES:
-- Every bullet MUST end with [Source N] matching sources array
-- Only verified facts — no hallucination
-- Absent data: "NO DIRECT DATA FOUND IN CURRENT SOURCES"
-- Include 6-15 diverse sources with real URLs`;
-}
-
-// ── API callers ────────────────────────────────────────────────────────────
-async function callGroq(target, system) {
-  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${KEYS.groq}`,
-    },
-    body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      max_tokens: 6000,
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content: `Investigate: "${target}". Produce full briefing JSON with real source URLs.` },
-      ],
-    }),
-  });
-  if (!r.ok) { const e = await r.json(); throw new Error(e.error?.message || `Groq ${r.status}`); }
-  const d = await r.json();
-  return d.choices[0].message.content;
-}
-
-async function callGemini(target, system) {
-  const r = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${KEYS.gemini}`,
-    {
+  try {
+    // 1. Fire non-blocking dispatch initialization payload to FastAPI server
+    const response = await fetch(BACKEND_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: system }] },
-        contents: [{ role: 'user', parts: [{ text: `Investigate: "${target}". Produce full briefing JSON.` }] }],
-        generationConfig: { maxOutputTokens: 6000, temperature: 0.3 },
-      }),
-    }
-  );
-  if (!r.ok) { const e = await r.json(); throw new Error(e.error?.message || `Gemini ${r.status}`); }
-  const d = await r.json();
-  return d.candidates?.[0]?.content?.parts?.[0]?.text || '';
-}
+        target: target,
+        urls: [], // Left blank — background Python modules discover links autonomously via query
+        provider: currentProvider,
+        mode: mode
+      })
+    });
 
-async function callClaude(target, system) {
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': KEYS.claude,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 8000,
-      system,
-      messages: [{ role: 'user', content: `Investigate: "${target}". Search internet and produce full briefing JSON.` }],
-      tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-    }),
-  });
-  if (!r.ok) { const e = await r.json(); throw new Error(e.error?.message || `Claude ${r.status}`); }
-  const d = await r.json();
-  return d.content.map(b => b.type === 'text' ? b.text : '').filter(Boolean).join('\n');
-}
+    if (!response.ok) throw new Error(`Server tracking initialization failed with code: ${response.status}`);
+    
+    const registrationResult = await response.json();
+    const jobId = registrationResult.job_id;
 
-async function callOpenAI(target, system) {
-  const r = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${KEYS.openai}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o',
-      max_tokens: 6000,
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content: `Investigate: "${target}". Produce full briefing JSON with real source URLs.` },
-      ],
-    }),
-  });
-  if (!r.ok) { const e = await r.json(); throw new Error(e.error?.message || `OpenAI ${r.status}`); }
-  const d = await r.json();
-  return d.choices[0].message.content;
-}
+    // 2. Fire independent async loop parsing status trackers
+    beginStatusPolling(jobId, target);
 
-// ── Parse JSON ─────────────────────────────────────────────────────────────
-function parseJSON(raw) {
-  const clean = raw.replace(/```json|```/g, '').trim();
-  try { return JSON.parse(clean); } catch(_) {}
-  const m = clean.match(/\{[\s\S]*\}/);
-  if (m) return JSON.parse(m[0]);
-  throw new Error('JSON parse failed. Raw: ' + clean.slice(0, 300));
-}
-
-// ── Main run ───────────────────────────────────────────────────────────────
-async function runOsint() {
-  const target = document.getElementById('targetInput').value.trim();
-  if (!target) { setStatus('Enter an entity name first', 'err'); return; }
-
-  const key = KEYS[currentProvider];
-  if (!key || key.startsWith('__')) {
-    setStatus(`No API key configured for ${currentProvider.toUpperCase()} — check GitHub Secrets`, 'err');
-    return;
-  }
-
-  const depth  = document.getElementById('depthSel').value;
-  const system = buildSystem(target, currentAngle, depth);
-
-  document.getElementById('results').innerHTML = '';
-  document.getElementById('runBtn').disabled = true;
-  setStatus(`Searching with ${currentProvider.toUpperCase()}...`, 'loading');
-
-  try {
-    let raw;
-    if      (currentProvider === 'groq')   raw = await callGroq(target, system);
-    else if (currentProvider === 'gemini') raw = await callGemini(target, system);
-    else if (currentProvider === 'claude') raw = await callClaude(target, system);
-    else if (currentProvider === 'openai') raw = await callOpenAI(target, system);
-
-    setStatus('Parsing briefing...', 'loading');
-    briefingData = parseJSON(raw);
-
-    const srcCount = (briefingData.sources || []).length;
-    setStatus(`Done — ${srcCount} sources found via ${currentProvider.toUpperCase()}`, 'ok');
-    renderBriefing(target, briefingData);
-
-  } catch(e) {
-    setStatus('Error: ' + e.message, 'err');
-    document.getElementById('results').innerHTML =
-      `<div class="error-box">ERROR: ${e.message}</div>`;
-  } finally {
+  } catch (error) {
+    setStatus('Connection Error: ' + error.message, 'err');
+    document.getElementById('results').innerHTML = `<div class="error-box">CRITICAL CONNECTION ERROR: Ensure your FastAPI application server is running locally on port 8000. Error details: ${error.message}</div>`;
     document.getElementById('runBtn').disabled = false;
   }
 }
 
-// ── Render ─────────────────────────────────────────────────────────────────
+// ── Polling & Lifecycle Management ──────────────────────────────────────────
+function beginStatusPolling(jobId, target) {
+  if (pollingTracker) clearInterval(pollingTracker);
+
+  pollingTracker = setInterval(async () => {
+    try {
+      const statusResponse = await fetch(`${STATUS_URL}${jobId}`);
+      if (!statusResponse.ok) throw new Error("Status registry communication fault.");
+      
+      const jobState = await statusResponse.json();
+
+      // Cycle UI classes contextually across state adjustments
+      if (jobState.status === "queued") {
+        setStatus("Job placed in background execution queue...", "loading");
+      } else if (jobState.status === "ingesting_data") {
+        setStatus("Autonomous Discovery Active: Injecting search strings and harvesting links...", "loading");
+      } else if (jobState.status === "ai_generation") {
+        setStatus(`Scraping complete. Core modeling ongoing via [${currentProvider.toUpperCase()}]...`, "loading");
+      } else if (jobState.status === "completed") {
+        clearInterval(pollingTracker);
+        setStatus("Context maps constructed successfully.", "ok");
+        
+        briefingData = jobState.data;
+        renderBriefing(target, briefingData);
+        document.getElementById('runBtn').disabled = false;
+      } else if (jobState.status === "failed") {
+        clearInterval(pollingTracker);
+        throw new Error(jobState.data?.error || "Pipeline run failure exception recorded.");
+      }
+    } catch (pollingError) {
+      clearInterval(pollingTracker);
+      setStatus('Runtime Error: ' + pollingError.message, 'err');
+      document.getElementById('results').innerHTML = `<div class="error-box">PIPELINE CRASH EXCEPTION: ${pollingError.message}</div>`;
+      document.getElementById('runBtn').disabled = false;
+    }
+  }, 2000); // Poll status registry every 2 seconds
+}
+
+// ── Document Object Model Template Rendering ─────────────────────────────
 function renderBriefing(target, b) {
   const sources = b.sources || [];
   const srcMap  = Object.fromEntries(sources.map(s => [s.index, s]));
   const conf    = b.confidence || {};
 
   function linkBullets(arr) {
-    if (!arr?.length) return `<div class="bullet"><span class="bullet-arrow">▸</span><span>No data found.</span></div>`;
+    if (!arr?.length) return `<div class="bullet"><span class="bullet-arrow">▸</span><span>No verification data extracted for this segment.</span></div>`;
     return arr.map(item => {
       const linked = item.replace(/\[Source (\d+)\]/g, (_, n) => {
         const s = srcMap[+n];
-        const url   = s?.url   || '#';
-        const title = s?.title || s?.domain || `Source ${n}`;
-        return `<a class="cite" href="${url}" target="_blank" title="${title}">[${n}]</a>`;
+        return `<a class="cite" href="${s?.url || '#'}" target="_blank" title="${s?.title || 'External Source Link'}">[Source ${n}]</a>`;
       });
       return `<div class="bullet"><span class="bullet-arrow">▸</span><span>${linked}</span></div>`;
     }).join('');
   }
 
-  const sections = [
+  const structuralCards = [
     { num:'01', key:'context', title:'Context & Covert Identity' },
-    { num:'02', key:'network', title:'Human Network (Kundali)' },
+    { num:'02', key:'network', title:'Human Network & Affiliations (Kundali)' },
     { num:'03', key:'trail',   title:'Paper Trail & Money Trail' },
     { num:'04', key:'guns',    title:'Smoking Guns & Contradictions' },
   ];
 
-  // Tabs to show
-  const showQuotes = document.getElementById('quotesChk').checked;
-  const showSEO    = document.getElementById('seoChk').checked;
-  const showLegal  = document.getElementById('legalChk').checked;
+  const toggleQuotes = document.getElementById('quotesChk').checked;
+  const toggleSEO    = document.getElementById('seoChk').checked;
 
-  let tabs = `
+  let tabsMarkup = `
     <div class="tabs">
-      <div class="tab active" onclick="switchTab('briefing',this)">Briefing</div>
-      ${showQuotes ? `<div class="tab" onclick="switchTab('quotes',this)">Quotes (${b.quotes?.length||0})</div>` : ''}
-      ${showSEO    ? `<div class="tab" onclick="switchTab('seo',this)">Headlines & SEO</div>` : ''}
-      <div class="tab" onclick="switchTab('sources',this)">Sources (${sources.length})</div>
+      <div class="tab active" onclick="switchTab('briefing',this)">Core Intelligence Briefing</div>
+      ${toggleQuotes ? `<div class="tab" onclick="switchTab('quotes',this)">Extracted Quotes (${b.quotes?.length || 0})</div>` : ''}
+      ${toggleSEO    ? `<div class="tab" onclick="switchTab('seo',this)">SEO & Headlines</div>` : ''}
+      <div class="tab" onclick="switchTab('sources',this)">Audit Sources (${sources.length})</div>
     </div>`;
 
-  // ── Briefing tab ──
+  // Briefing Pane Layout Builder
   let briefingPane = `<div id="tab-briefing" class="tab-pane visible">`;
-  sections.forEach(s => {
-    const c = conf[s.key] || 'medium';
+  structuralCards.forEach(sec => {
+    const level = conf[sec.key] || 'medium';
     briefingPane += `
       <div class="sec">
         <div class="sec-head">
-          <span class="sec-num">${s.num}</span>
-          <span class="sec-title">${s.title}</span>
-          <span class="conf conf-${c}">${c.toUpperCase()}</span>
+          <span class="sec-num">${sec.num}</span>
+          <span class="sec-title">${sec.title}</span>
+          <span class="conf conf-${level}">${level.toUpperCase()} CONFIDENCE</span>
         </div>
-        <div class="sec-body">${linkBullets(b[s.key])}</div>
+        <div class="sec-body">${linkBullets(b[sec.key])}</div>
       </div>`;
   });
 
   if (b.needs_corroboration?.length) {
-    briefingPane += `<div class="warn-box"><div class="warn-title">⚠ NEEDS CORROBORATION BEFORE PUBLISHING</div>`;
-    b.needs_corroboration.forEach(n => briefingPane += `<div class="warn-item">${n}</div>`);
+    briefingPane += `<div class="warn-box"><div class="warn-title">⚠ PRE-PUBLICATION CORROBORATION FLAGS</div>`;
+    b.needs_corroboration.forEach(item => briefingPane += `<div class="warn-item">${item}</div>`);
     briefingPane += `</div>`;
   }
   if (b.named_persons?.length) {
-    briefingPane += `<div class="panel" style="margin-top:0">
-      <div class="panel-label">Right-of-Reply Checklist</div>
-      <div class="persons-wrap">`;
+    briefingPane += `<div class="panel" style="margin-top:0"><div class="panel-label">Right-of-Reply Contact Checklist</div><div class="persons-wrap">`;
     b.named_persons.forEach(p => briefingPane += `<span class="person-tag">☐ ${p}</span>`);
     briefingPane += `</div></div>`;
   }
   briefingPane += `</div>`;
 
-  // ── Quotes tab ──
+  // Quotes Panel Builder
   let quotesPane = `<div id="tab-quotes" class="tab-pane">`;
   if (b.quotes?.length) {
     b.quotes.forEach(q => {
@@ -994,79 +871,81 @@ function renderBriefing(target, b) {
         <div class="quote-card">
           <div class="quote-text">"${q.quote}"</div>
           <div class="quote-meta">
-            <span class="${q.is_direct ? 'q-direct' : 'q-para'}">${q.is_direct ? 'DIRECT' : 'PARAPHRASE'}</span>
-            <strong>${q.speaker||'Unknown'}</strong>
+            <span class="${q.is_direct ? 'q-direct' : 'q-para'}">${q.is_direct ? 'VERBATIM DIRECT' : 'PARAPHRASE'}</span>
+            <strong>${q.speaker || 'Unverified Speaker'}</strong>
             ${q.date ? `· ${q.date}` : ''}
-            ${q.source_url ? `· <span class="src-url" onclick="window.open('${q.source_url}','_blank')">${q.source_url.slice(0,50)}…</span>` : ''}
           </div>
         </div>`;
     });
-  } else { quotesPane += `<p style="color:var(--muted);font-size:13px;padding:8px 0">No quotes extracted.</p>`; }
+  } else { quotesPane += `<p style="color:var(--muted);font-size:12px;padding:12px 4px">Zero direct or paraphrased quotes found.</p>`; }
   quotesPane += `</div>`;
 
-  // ── SEO tab ──
+  // SEO Elements Builder
   let seoPane = `<div id="tab-seo" class="tab-pane">`;
   if (b.headline_variants) {
-    const hv = b.headline_variants;
     seoPane += `<div class="hl-grid" style="margin-bottom:14px">`;
-    [['seo','SEO Headline'],['clickable','Clickable / Social'],['print','Print Headline'],['thread_hook','Thread Hook']].forEach(([k,l]) => {
-      if (hv[k]) seoPane += `<div class="hl-card"><div class="hl-label">${l}</div><div class="hl-text">${hv[k]}</div></div>`;
+    [['seo','Search Engine Optimization Title'],['clickable','Viral / High Click-Through Rate'],['print','Standard Print Layout'],['thread_hook','Social Thread Inception Hook']].forEach(([k, label]) => {
+      if (b.headline_variants[k]) seoPane += `<div class="hl-card"><div class="hl-label">${label}</div><div class="hl-text">${b.headline_variants[k]}</div></div>`;
     });
     seoPane += `</div>`;
   }
   if (b.keywords?.length) {
     seoPane += `<div class="kw-wrap">`;
-    b.keywords.forEach(kw => seoPane += `<span class="kw">${kw}</span>`);
+    b.keywords.forEach(word => seoPane += `<span class="kw">${word}</span>`);
     seoPane += `</div>`;
   }
   seoPane += `</div>`;
 
-  // ── Sources tab ──
+  // Source Audit Matrix Mapping View
   let sourcesPane = `<div id="tab-sources" class="tab-pane">`;
-  sources.forEach(s => {
-    sourcesPane += `
-      <div class="source-row">
-        <div class="src-idx">[${s.index}]</div>
-        <div class="src-info">
-          <div class="src-title-text">${s.title || s.domain}</div>
-          <span class="src-url" onclick="window.open('${s.url}','_blank')">${s.url}</span>
-          <div class="src-type-badge">${s.type||'web'} · ${s.domain}${s.snippet ? ' — ' + s.snippet.slice(0,70) + '…' : ''}</div>
-        </div>
-      </div>`;
-  });
+  if (sources.length) {
+    sources.forEach(s => {
+      sourcesPane += `
+        <div class="source-row">
+          <div class="src-idx">[Source ${s.index}]</div>
+          <div class="src-info">
+            <div class="src-title-text">${s.title || s.domain || 'Untargeted Content Node'}</div>
+            <span class="src-url" onclick="window.open('${s.url}','_blank')">${s.url}</span>
+            <div class="src-type-badge">${s.type || 'web'} · origin domain node: ${s.domain}</div>
+          </div>
+        </div>`;
+    });
+  } else { sourcesPane += `<p style="color:var(--muted);font-size:12px;padding:12px 4px">No autonomous sources logged.</p>`; }
   sourcesPane += `</div>`;
 
+  // Inject structural configurations down to viewport engine containers
   document.getElementById('results').innerHTML = `
     <div class="result-topbar">
       <div>
         <div class="entity-header">${target}</div>
-        <div class="entity-meta">${new Date().toLocaleString('en-IN')} · ${currentProvider.toUpperCase()} · ${sources.length} sources</div>
+        <div class="entity-meta">${new Date().toLocaleDateString()} · Source Context Nodes Evaluated: ${sources.length}</div>
       </div>
-      <button class="copy-btn" onclick="copyJSON()">COPY JSON</button>
+      <button class="copy-btn" onclick="copyJSON()">COPY BRIEFING JSON</button>
     </div>
-    ${tabs}
+    ${tabsMarkup}
     ${briefingPane}
-    ${showQuotes ? quotesPane : ''}
-    ${showSEO    ? seoPane    : ''}
+    ${toggleQuotes ? quotesPane : ''}
+    ${toggleSEO ? seoPane : ''}
     ${sourcesPane}`;
 }
 
-function switchTab(name, el) {
+function switchTab(tabName, element) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('visible'));
-  el.classList.add('active');
-  const pane = document.getElementById('tab-' + name);
-  if (pane) pane.classList.add('visible');
+  element.classList.add('active');
+  const targetPane = document.getElementById('tab-' + tabName);
+  if (targetPane) targetPane.classList.add('visible');
 }
 
 function copyJSON() {
   if (!briefingData) return;
   navigator.clipboard.writeText(JSON.stringify(briefingData, null, 2));
+  alert("Briefing payload data copied to clipboard.");
 }
 
-// Enter key
-document.getElementById('targetInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') runOsint();
+// Global keypress listener tracking command layout operations
+document.getElementById('targetInput').addEventListener('keydown', event => {
+  if (event.key === 'Enter') runOsint();
 });
 </script>
 </body>
